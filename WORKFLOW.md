@@ -1,6 +1,6 @@
 # Novel Writing Workflow Guide
 
-A detailed guide to the collaborative process of writing literary fiction with the 8-agent system.
+A detailed guide to the collaborative process of writing literary fiction with the 9-agent system.
 
 ## Overview
 
@@ -246,9 +246,17 @@ The workflow is designed to be iterative, flexible, and human-centered. While ph
    - Flags any contradictions
    - Manages any necessary updates
 
+5. **Redundancy Review**
+   - Redundancy Editor checks for unnecessary repetition
+   - Compares chapter against previous chapters
+   - Identifies repeated information, scenes, or language
+   - Distinguishes intentional motifs from unintentional redundancy
+   - Provides specific revision recommendations
+
 ### Outputs
 - Complete chapters
 - Beta reader reports
+- Redundancy reports
 - Revision tracking
 - Updated story bible
 
@@ -295,7 +303,14 @@ The workflow is designed to be iterative, flexible, and human-centered. While ph
    - Rhythm and music enhancement
    - Voice consistency verification
 
-5. **Final Fact-Check**
+5. **Comprehensive Redundancy Audit**
+   - Redundancy Editor full manuscript review
+   - Tracks all repetition across entire work
+   - Catalogs intentional patterns vs. accidental redundancy
+   - Provides prioritized revision roadmap
+   - Ensures economy and precision throughout
+
+6. **Final Fact-Check**
    - Research Agent comprehensive verification
    - All factual claims checked
    - Historical accuracy confirmed
@@ -305,6 +320,7 @@ The workflow is designed to be iterative, flexible, and human-centered. While ph
 - Revision plan
 - Polished manuscript
 - Final continuity report
+- Comprehensive redundancy audit
 - Final fact-check report
 
 ---
