@@ -42,6 +42,13 @@ class NovelWriterGUI(ctk.CTk):
         # Status
         self.current_project_path: Optional[Path] = None
 
+        # Keyboard shortcuts
+        self.bind("<Control-s>", lambda e: self._save_project())
+        self.bind("<Command-s>", lambda e: self._save_project())  # Mac
+
+        # Show welcome message on first launch
+        self.after(500, self._show_welcome)
+
     def _create_menu(self):
         """Create menu bar"""
         # Menu frame at top
@@ -133,14 +140,37 @@ class NovelWriterGUI(ctk.CTk):
             if success:
                 self.current_project_path = self.project_manager.current_project_dir
                 self._update_project_display()
-                messagebox.showinfo("Success", message)
+
+                # Switch to Configure tab to guide user
+                self.tabview.set("Configure")
+
+                # Show success message with guidance
+                project_path = str(self.project_manager.current_project_dir)
+                messagebox.showinfo(
+                    "Project Created Successfully!",
+                    f"Project created at:\n{project_path}\n\n" +
+                    "Next steps:\n" +
+                    "1. Fill in your story details in the Configure tab\n" +
+                    "2. Click 'Save Project' when done\n" +
+                    "3. Go to Generate tab to start writing with agents"
+                )
             else:
                 messagebox.showerror("Error", message)
 
     def _open_project(self):
         """Open an existing project"""
+        # Show helpful message first
+        messagebox.showinfo(
+            "Open Project",
+            "Select your project directory.\n\n" +
+            "The directory should contain a '.novel-config.json' file.\n\n" +
+            "Default location for new projects:\n" +
+            f"{Path.home() / 'NovelProjects'}"
+        )
+
         directory = filedialog.askdirectory(
-            title="Select Project Directory"
+            title="Select Project Directory (containing .novel-config.json)",
+            initialdir=Path.home() / "NovelProjects" if (Path.home() / "NovelProjects").exists() else Path.home()
         )
 
         if directory:
@@ -149,9 +179,9 @@ class NovelWriterGUI(ctk.CTk):
             if success:
                 self.current_project_path = Path(directory)
                 self._update_project_display()
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo("Project Loaded", f"Successfully loaded: {message}")
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror("Error", f"{message}\n\nMake sure you selected the correct project directory containing '.novel-config.json'")
 
     def _save_project(self):
         """Save current project"""
@@ -180,6 +210,22 @@ class NovelWriterGUI(ctk.CTk):
             self.configure_tab.load_from_config()
             self.review_tab.refresh()
             self.export_tab.refresh()
+
+    def _show_welcome(self):
+        """Show welcome message on first launch"""
+        if not self.project_manager.current_project_dir:
+            response = messagebox.showinfo(
+                "Welcome to Novel Writer!",
+                "Welcome to the Multi-Agent Novel Writing System!\n\n" +
+                "To get started:\n" +
+                "1. Click 'New Project' to create your first novel project\n" +
+                "2. Fill in your story details in the Configure tab\n" +
+                "3. Chat with AI agents in the Generate tab\n" +
+                "4. Review and export your work\n\n" +
+                "💡 Tip: Use Ctrl+S (Cmd+S on Mac) to save at any time\n\n" +
+                "Ready to create your first project?"
+            )
+            # Could offer to create project now, but keep it simple for now
 
 
 class NewProjectDialog(ctk.CTkToplevel):
@@ -233,10 +279,19 @@ class NewProjectDialog(ctk.CTkToplevel):
         # Directory
         ctk.CTkLabel(form_frame, text="Project Directory (optional):", font=("Arial", 12)).pack(anchor="w", pady=(10, 5))
 
+        # Show default location
+        default_loc = Path.home() / "NovelProjects"
+        ctk.CTkLabel(
+            form_frame,
+            text=f"Default: {default_loc}",
+            font=("Arial", 10),
+            text_color="gray"
+        ).pack(anchor="w", pady=(0, 5))
+
         dir_frame = ctk.CTkFrame(form_frame)
         dir_frame.pack(fill="x", pady=(0, 15))
 
-        self.directory_entry = ctk.CTkEntry(dir_frame, width=320, placeholder_text="Leave blank for default")
+        self.directory_entry = ctk.CTkEntry(dir_frame, width=320, placeholder_text="Leave blank to use default location")
         self.directory_entry.pack(side="left", padx=(0, 10))
 
         browse_btn = ctk.CTkButton(dir_frame, text="Browse", command=self._browse_directory, width=70)

@@ -26,6 +26,26 @@ class ConfigureTab:
         self.scroll_frame = ctk.CTkScrollableFrame(self.parent)
         self.scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # Getting Started Info Panel
+        info_frame = ctk.CTkFrame(self.scroll_frame, fg_color=("#3B8ED0", "#1F6AA5"))
+        info_frame.pack(fill="x", pady=(0, 20), padx=5)
+
+        ctk.CTkLabel(
+            info_frame,
+            text="📝 Getting Started",
+            font=("Arial", 14, "bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        ctk.CTkLabel(
+            info_frame,
+            text="1. Fill in your story details below\n" +
+                 "2. Choose Simple mode (quick) or Advanced mode (detailed)\n" +
+                 "3. Click 'Save Project' in the menu when done\n" +
+                 "4. Go to Generate tab to start working with agents",
+            font=("Arial", 11),
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+
         # Mode selector
         mode_frame = ctk.CTkFrame(self.scroll_frame)
         mode_frame.pack(fill="x", pady=(0, 20))
