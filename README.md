@@ -4,7 +4,7 @@ A sophisticated multi-agent system for collaborative literary fiction writing, w
 
 ## System Overview
 
-This project implements an 8-agent collaborative writing system, where each agent has specialized expertise in different aspects of literary fiction craft. The agents work together under human creative direction to develop and write novels with professional-level attention to:
+This project implements a 9-agent collaborative writing system, where each agent has specialized expertise in different aspects of literary fiction craft. The agents work together under human creative direction to develop and write novels with professional-level attention to:
 
 - Narrative structure and thematic architecture
 - Prose style and linguistic artistry
@@ -12,10 +12,11 @@ This project implements an 8-agent collaborative writing system, where each agen
 - Atmospheric world-building
 - Historical and cultural accuracy
 - Internal consistency
+- Redundancy elimination and variation
 - Reader experience
 - Human-AI collaboration
 
-## The Eight Agents
+## The Nine Agents
 
 ### 1. **Architect Agent** - Narrative Structure & Thematic Orchestrator
 - Designs overall story structure (acts, chapters, scenes)
@@ -81,6 +82,14 @@ This project implements an 8-agent collaborative writing system, where each agen
 - Facilitates collaborative refinement
 - **Primary Output**: Narrative proposals, discussion summaries, synthesized guidance
 
+### 9. **Redundancy Editor Agent** - Redundancy Detective & Variation Specialist
+- Identifies unnecessary repetition throughout the novel
+- Distinguishes intentional motifs from unintentional redundancy
+- Tracks all established information, scenes, and language patterns
+- Provides solutions for eliminating or varying redundant content
+- Preserves meaningful repetition while cutting wheel-spinning
+- **Primary Output**: Redundancy reports, revision recommendations, variation suggestions
+
 ## How It Works
 
 ### Collaborative Workflow
@@ -145,6 +154,7 @@ Each agent has a comprehensive specification document:
 - `/agents/06_CONTINUITY_EDITOR_AGENT.md`
 - `/agents/07_BETA_READER_AGENT.md`
 - `/agents/08_STORY_ADVOCATE_AGENT.md`
+- `/agents/09_REDUNDANCY_EDITOR_AGENT.md`
 
 ## Key Features
 
@@ -201,7 +211,8 @@ Novel_with_Claude_Agents/
 │   ├── 05_RESEARCH_AGENT.md
 │   ├── 06_CONTINUITY_EDITOR_AGENT.md
 │   ├── 07_BETA_READER_AGENT.md
-│   └── 08_STORY_ADVOCATE_AGENT.md
+│   ├── 08_STORY_ADVOCATE_AGENT.md
+│   └── 09_REDUNDANCY_EDITOR_AGENT.md
 ├── project/                 # Your novel project files
 │   ├── planning/           # Outlines, character docs, research
 │   ├── manuscript/         # Draft chapters and scenes

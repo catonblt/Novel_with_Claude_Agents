@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started writing your novel with the 8-agent collaborative system.
+Get started writing your novel with the 9-agent collaborative system.
 
 ## First Steps
 
