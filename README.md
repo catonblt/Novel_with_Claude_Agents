@@ -135,13 +135,33 @@ This project implements a 9-agent collaborative writing system, where each agent
 
 ## Getting Started
 
-### For New Projects
+### Quick Start - Using the CLI
 
-1. Review all agent descriptions in `/agents/` directory
-2. Read the workflow guide in `WORKFLOW.md`
-3. Begin with vision discussion with Story Advocate
-4. Allow Architect to propose structural frameworks
-5. Develop collaboratively through iterative cycles
+This framework is **reusable** for writing multiple novels. Use the CLI to manage projects:
+
+```bash
+# Create a new novel project
+python novel.py init "Your Novel Title" --author "Your Name"
+
+# Navigate to your project
+cd your-novel-title
+
+# Check project status
+python novel.py status
+
+# Start working with agents
+python novel.py agent 8  # Story Advocate (start here!)
+```
+
+**See [GETTING_STARTED.md](GETTING_STARTED.md) for a complete quick start guide.**
+
+### For New Projects - Detailed Steps
+
+1. Create a project using `novel.py init`
+2. Review agent descriptions with `novel.py agents`
+3. Read the workflow guide in `WORKFLOW.md`
+4. Begin with Story Advocate (Agent 8): `novel.py agent 8`
+5. Progress through phases: vision → planning → development → drafting → revision → polish
 
 ### Agent Files
 
@@ -224,6 +244,77 @@ Novel_with_Claude_Agents/
     └── scene-template.md
 ```
 
+## CLI Interface & Multiple Projects
+
+### The Novel CLI
+
+The `novel.py` CLI makes it easy to create and manage multiple novel projects:
+
+```bash
+# Initialize new projects
+python novel.py init "Mystery Novel"
+python novel.py init "Literary Fiction"
+python novel.py init "Thriller"
+
+# Each project is independent with its own configuration and files
+```
+
+**Key Commands:**
+- `init` - Create a new novel project
+- `status` - View project information
+- `agent <number>` - Display agent instructions
+- `agents` - List all agents
+- `phase <name>` - Update project phase
+- `templates` - View available templates
+
+### Managing Multiple Novels
+
+Each novel project is self-contained:
+
+```
+~/writing/
+├── mystery-novel/
+│   ├── .novel-config.json    # Project configuration
+│   ├── planning/
+│   ├── manuscript/
+│   └── story-bible/
+├── literary-fiction/
+│   ├── .novel-config.json
+│   └── ...
+└── thriller/
+    ├── .novel-config.json
+    └── ...
+```
+
+Switch between projects by changing directories:
+```bash
+cd ~/writing/mystery-novel
+python novel.py status
+
+cd ~/writing/literary-fiction
+python novel.py status
+```
+
+### Configuration File
+
+Each project has a `.novel-config.json` that stores:
+- Project metadata (title, author, genre, word count target)
+- Vision (themes, tone, central questions)
+- Structure (POV, chronology, chapters)
+- Current phase (vision, planning, drafting, etc.)
+- Custom notes and settings
+
+See `example-novel-config.json` for a complete example.
+
+## Documentation
+
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Quick start guide (start here!)
+- **[USAGE.md](USAGE.md)** - Comprehensive usage guide with examples
+- **[WORKFLOW.md](WORKFLOW.md)** - Detailed phase-by-phase workflow
+- **[QUICK_START.md](QUICK_START.md)** - Condensed workflow overview
+- **example-novel-config.json** - Sample project configuration
+- **novel-config.schema.json** - Configuration file schema
+
 ## Contributing
 
 This is a framework for collaborative novel writing. You can adapt it by:
@@ -246,4 +337,20 @@ This framework is provided for creative use. Adapt it freely for your literary p
 
 ---
 
-**Ready to begin?** Start with the Story Advocate agent to discuss your vision, then proceed through the collaborative development process. Each agent stands ready to contribute their expertise to your novel.
+## Ready to Begin?
+
+**Create your first project:**
+
+```bash
+python novel.py init "Your Novel Title" --author "Your Name"
+cd your-novel-title
+python novel.py agent 8  # Start with Story Advocate
+```
+
+**Then:**
+1. Read [GETTING_STARTED.md](GETTING_STARTED.md) for step-by-step guidance
+2. Follow the prompts from `novel.py` commands
+3. Work through the phases collaboratively with the agents
+4. Write your novel!
+
+Each agent stands ready to contribute their expertise to your novel. The system is fully reusable—create as many novel projects as you want.

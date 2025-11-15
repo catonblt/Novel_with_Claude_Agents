@@ -1,0 +1,54 @@
+{
+  "project_name": "The Memory Keeper's Daughter",
+  "version": "1.0",
+  "metadata": {
+    "author": "Your Name",
+    "genre": "Literary Fiction - Psychological Drama",
+    "target_word_count": 85000,
+    "created_date": "2025-11-15",
+    "comp_titles": [
+      "The Vanishing Half by Brit Bennett",
+      "Everything I Never Told You by Celeste Ng",
+      "The Night Watchman by Louise Erdrich"
+    ]
+  },
+  "vision": {
+    "themes": [
+      "Memory and identity",
+      "Family secrets and their consequences",
+      "The unreliability of memory",
+      "Forgiveness and healing"
+    ],
+    "tone": "Contemplative and emotionally nuanced, with moments of quiet revelation",
+    "style_notes": "Lyrical but not overwrought. Intimate third-person that moves between characters. Sensory-rich without being purple. Emphasis on interiority and psychological realism.",
+    "central_question": "Can we ever truly know the people we love, or do we only know the versions of them we've constructed from incomplete memories?",
+    "emotional_core": "The bittersweet recognition that love persists even when understanding fails"
+  },
+  "structure": {
+    "pov": "third_person_limited",
+    "chronology": "non_linear",
+    "estimated_chapters": 24,
+    "act_structure": "Three-part structure with alternating timelines"
+  },
+  "workflow_preference": "iterative_spiraling",
+  "active_phase": "vision",
+  "project_paths": {
+    "project_root": "./projects/memory-keeper",
+    "planning_dir": "./projects/memory-keeper/planning",
+    "manuscript_dir": "./projects/memory-keeper/manuscript",
+    "story_bible_dir": "./projects/memory-keeper/story-bible",
+    "feedback_dir": "./projects/memory-keeper/feedback"
+  },
+  "custom_notes": {
+    "research_needed": [
+      "1970s Seattle neighborhood culture",
+      "Memory and neuroscience basics",
+      "Photography and darkroom techniques"
+    ],
+    "key_locations": [
+      "Seattle family home (1975-1995)",
+      "Portland apartment (present day)",
+      "Lake house (summer memories)"
+    ]
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Novel Project Configuration",
+  "description": "Configuration file for a novel writing project using the 9-agent system",
+  "type": "object",
+  "required": ["project_name", "version"],
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "description": "The working title or name of your novel project"
+    },
+    "version": {
+      "type": "string",
+      "description": "Configuration file format version",
+      "pattern": "^1\\.0$"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string",
+          "description": "Author name"
+        },
+        "genre": {
+          "type": "string",
+          "description": "Primary genre (e.g., literary fiction, psychological thriller, etc.)"
+        },
+        "target_word_count": {
+          "type": "integer",
+          "description": "Target word count for the completed novel"
+        },
+        "created_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Project creation date"
+        },
+        "comp_titles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Comparable published titles"
+        }
+      }
+    },
+    "vision": {
+      "type": "object",
+      "properties": {
+        "themes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Core themes to explore in the novel"
+        },
+        "tone": {
+          "type": "string",
+          "description": "Overall tone (e.g., contemplative, darkly comic, elegiac, etc.)"
+        },
+        "style_notes": {
+          "type": "string",
+          "description": "Notes on desired prose style and aesthetic"
+        },
+        "central_question": {
+          "type": "string",
+          "description": "The central dramatic or thematic question"
+        },
+        "emotional_core": {
+          "type": "string",
+          "description": "The emotional heart of the story"
+        }
+      }
+    },
+    "structure": {
+      "type": "object",
+      "properties": {
+        "pov": {
+          "type": "string",
+          "enum": ["first_person", "third_person_limited", "third_person_omniscient", "multiple_pov", "second_person"],
+          "description": "Point of view structure"
+        },
+        "chronology": {
+          "type": "string",
+          "enum": ["linear", "non_linear", "frame_narrative", "mixed"],
+          "description": "Chronological structure"
+        },
+        "estimated_chapters": {
+          "type": "integer",
+          "description": "Estimated number of chapters"
+        },
+        "act_structure": {
+          "type": "string",
+          "description": "Act structure (e.g., three-act, four-part, etc.)"
+        }
+      }
+    },
+    "workflow_preference": {
+      "type": "string",
+      "enum": ["detailed_planning", "discovery_writing", "key_scenes_first", "iterative_spiraling"],
+      "description": "Preferred workflow approach"
+    },
+    "active_phase": {
+      "type": "string",
+      "enum": ["vision", "planning", "development", "drafting", "revision", "polish"],
+      "description": "Current phase of the project"
+    },
+    "project_paths": {
+      "type": "object",
+      "properties": {
+        "project_root": {
+          "type": "string",
+          "description": "Root directory for this novel project"
+        },
+        "planning_dir": {
+          "type": "string",
+          "description": "Directory for planning documents"
+        },
+        "manuscript_dir": {
+          "type": "string",
+          "description": "Directory for manuscript drafts"
+        },
+        "story_bible_dir": {
+          "type": "string",
+          "description": "Directory for story bible and continuity tracking"
+        },
+        "feedback_dir": {
+          "type": "string",
+          "description": "Directory for beta reader feedback"
+        }
+      }
+    },
+    "custom_notes": {
+      "type": "object",
+      "description": "Additional custom notes and settings",
+      "additionalProperties": true
+    }
+  }
+}
