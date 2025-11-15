@@ -135,7 +135,30 @@ This project implements a 9-agent collaborative writing system, where each agent
 
 ## Getting Started
 
-### Quick Start - Using the CLI
+### 🖥️ Desktop GUI Application (Recommended for Beginners)
+
+**NEW!** We now offer a user-friendly desktop application with a modern dark mode interface:
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set your Anthropic API key
+export ANTHROPIC_API_KEY='your-api-key-here'
+
+# Launch the GUI
+python novel_gui.py
+```
+
+**Features:**
+- 📝 **Configure Tab**: Simple and Advanced modes for project setup
+- 💬 **Generate Tab**: Interactive chat with agents + real-time logs
+- 📖 **Review Tab**: View and edit all outputs in one place
+- 📤 **Export Tab**: Export to .docx, manage versions, compare drafts
+
+**See [GUI_README.md](GUI_README.md) for complete GUI documentation.**
+
+### ⌨️ Command Line Interface (For Advanced Users)
 
 This framework is **reusable** for writing multiple novels. Use the CLI to manage projects:
 
@@ -339,7 +362,21 @@ This framework is provided for creative use. Adapt it freely for your literary p
 
 ## Ready to Begin?
 
-**Create your first project:**
+**Using the GUI (Recommended):**
+
+```bash
+pip install -r requirements.txt
+export ANTHROPIC_API_KEY='your-api-key-here'
+python novel_gui.py
+```
+
+**Then:**
+1. Click "New Project" and enter your novel details
+2. Configure your story in the Configure tab
+3. Start chatting with agents in the Generate tab
+4. Review and export your work!
+
+**Using the CLI:**
 
 ```bash
 python novel.py init "Your Novel Title" --author "Your Name"
@@ -347,10 +384,10 @@ cd your-novel-title
 python novel.py agent 8  # Start with Story Advocate
 ```
 
-**Then:**
-1. Read [GETTING_STARTED.md](GETTING_STARTED.md) for step-by-step guidance
-2. Follow the prompts from `novel.py` commands
-3. Work through the phases collaboratively with the agents
-4. Write your novel!
+**Resources:**
+- 🖥️ **GUI Guide**: [GUI_README.md](GUI_README.md)
+- 📖 **Getting Started**: [GETTING_STARTED.md](GETTING_STARTED.md)
+- 📚 **Detailed Workflow**: [WORKFLOW.md](WORKFLOW.md)
+- 💡 **Usage Examples**: [USAGE.md](USAGE.md)
 
 Each agent stands ready to contribute their expertise to your novel. The system is fully reusable—create as many novel projects as you want.
