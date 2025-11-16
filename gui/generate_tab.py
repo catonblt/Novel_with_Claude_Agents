@@ -30,13 +30,15 @@ class GenerateTab:
         main_container = ctk.CTkFrame(self.parent)
         main_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Left panel - Chat interface (60% width)
+        # Left panel - Chat interface (75% width - much bigger!)
         left_panel = ctk.CTkFrame(main_container)
         left_panel.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        left_panel.grid_columnconfigure(0, weight=3)  # Give more weight to left panel
 
-        # Right panel - Logs (40% width)
+        # Right panel - Logs (25% width - smaller)
         right_panel = ctk.CTkFrame(main_container)
-        right_panel.pack(side="right", fill="both", expand=True, padx=(5, 0))
+        right_panel.pack(side="right", fill="both", padx=(5, 0))
+        right_panel.configure(width=300)  # Fixed narrower width
 
         # === LEFT PANEL: Chat Interface ===
 
@@ -196,15 +198,23 @@ class GenerateTab:
 
         if not self.agent_manager.is_api_configured():
             messagebox.showerror(
-                "API Not Configured",
-                "Claude API is not configured.\n\n" +
-                "Please set the ANTHROPIC_API_KEY environment variable:\n\n" +
-                "export ANTHROPIC_API_KEY='your-api-key-here'"
+                "API Key Required",
+                "No valid Anthropic API key found.\n\n" +
+                "To set up your API key:\n" +
+                "1. Click 'Settings' in the top menu\n" +
+                "2. Click 'Change API Key'\n" +
+                "3. Paste your API key and save\n\n" +
+                "Get your API key from:\n" +
+                "https://console.anthropic.com/settings/keys"
             )
             return
 
         agent_num = self.agent_var.get().split(".")[0].strip()
         self.current_agent = agent_num
+
+        # Set project directory for auto-saving conversations
+        if self.project_manager.current_project_dir:
+            self.agent_manager.set_project_directory(self.project_manager.current_project_dir)
 
         # Get story context from config
         config = self.project_manager.get_config()
@@ -344,10 +354,17 @@ class GenerateTab:
 
         if success:
             self._log(f"Agent output saved: {message}")
-            messagebox.showinfo("Success", message)
+            # Update status label instead of popup
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Output saved to file", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
         else:
             self._log(f"Error saving output: {message}")
-            messagebox.showerror("Error", message)
+            messagebox.showerror("Save Error", message)
 
     def _clear_conversation(self):
         """Clear the conversation"""

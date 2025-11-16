@@ -36,6 +36,8 @@ class AgentManager:
         self.client: Optional[Anthropic] = None
         self.conversation_history: List[Dict] = []
         self.current_agent: Optional[str] = None
+        self.current_project_dir: Optional[Path] = None
+        self.conversation_session_file: Optional[Path] = None
         self.is_generating = False
         self.stop_requested = False
 
@@ -44,6 +46,10 @@ class AgentManager:
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if api_key:
                 self.client = Anthropic(api_key=api_key)
+
+    def set_project_directory(self, project_dir: Path):
+        """Set the current project directory for auto-saving conversations"""
+        self.current_project_dir = Path(project_dir)
 
     def load_agent_instructions(self, agent_num: str) -> Optional[str]:
         """Load instructions for a specific agent"""
@@ -72,6 +78,18 @@ class AgentManager:
         self.current_agent = agent_num
         self.conversation_history = []
 
+        # Create a new conversation session file with timestamp
+        if self.current_project_dir:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
+
+            # Create conversations directory structure
+            conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
+            conversations_dir.mkdir(parents=True, exist_ok=True)
+
+            self.conversation_session_file = conversations_dir / f"{timestamp}-session.md"
+
         # Load agent instructions
         instructions = self.load_agent_instructions(agent_num)
 
@@ -98,6 +116,9 @@ class AgentManager:
                 "role": "system",
                 "content": f"{instructions}\n\n{context}"
             })
+
+            # Save conversation start to file
+            self._auto_save_conversation()
 
     def send_message(
         self,
@@ -187,6 +208,10 @@ class AgentManager:
                     "content": full_response
                 })
 
+                # Auto-save the conversation after each exchange
+                self._auto_save_conversation()
+                self._append_to_full_transcript()
+
                 if on_complete:
                     on_complete(full_response)
 
@@ -212,7 +237,27 @@ class AgentManager:
 
     def is_api_configured(self) -> bool:
         """Check if Claude API is configured"""
-        return self.client is not None
+        # Always check current environment for API key
+        # (in case it was added after initialization)
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+
+        if api_key and len(api_key) > 50 and api_key.startswith('sk-ant-'):
+            # Valid key exists - reinitialize client if needed
+            if not self.client and ANTHROPIC_AVAILABLE:
+                try:
+                    self.client = Anthropic(api_key=api_key)
+                    print(f"[Agent Manager] Initialized client with API key (length: {len(api_key)})")
+                except Exception as e:
+                    print(f"[Agent Manager] Failed to initialize client: {e}")
+                    return False
+            return True
+        else:
+            print(f"[Agent Manager] No valid API key found in environment")
+            print(f"[Agent Manager] ANTHROPIC_API_KEY in env: {'ANTHROPIC_API_KEY' in os.environ}")
+            if 'ANTHROPIC_API_KEY' in os.environ:
+                key_val = os.environ.get('ANTHROPIC_API_KEY', '')
+                print(f"[Agent Manager] Key length: {len(key_val)}, starts with sk-ant: {key_val.startswith('sk-ant-') if key_val else False}")
+            return False
 
     def get_last_agent_response(self) -> Optional[str]:
         """Get the last response from the agent"""
@@ -220,3 +265,87 @@ class AgentManager:
             if msg["role"] == "assistant":
                 return msg["content"]
         return None
+
+    def _auto_save_conversation(self):
+        """Auto-save the current conversation to the session file"""
+        if not self.conversation_session_file or not self.current_project_dir:
+            return
+
+        try:
+            from datetime import datetime
+
+            # Build conversation content in markdown format
+            content = []
+            content.append(f"# Conversation with {self.get_agent_name(self.current_agent)}\n")
+            content.append(f"**Session Started:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+            content.append("---\n\n")
+
+            for msg in self.conversation_history:
+                if msg["role"] == "system":
+                    content.append("## System Context\n\n")
+                    content.append(f"{msg['content']}\n\n")
+                    content.append("---\n\n")
+                elif msg["role"] == "user":
+                    content.append("### You:\n\n")
+                    content.append(f"{msg['content']}\n\n")
+                elif msg["role"] == "assistant":
+                    content.append(f"### {self.get_agent_name(self.current_agent)}:\n\n")
+                    content.append(f"{msg['content']}\n\n")
+                    content.append("---\n\n")
+
+            # Write to session file
+            self.conversation_session_file.write_text(''.join(content))
+
+        except Exception as e:
+            print(f"[Agent Manager] Error auto-saving conversation: {e}")
+
+    def _append_to_full_transcript(self):
+        """Append the latest exchange to the full transcript file"""
+        if not self.current_project_dir or not self.conversation_history:
+            return
+
+        try:
+            from datetime import datetime
+
+            # Full transcript file
+            transcript_file = self.current_project_dir / "conversations" / "full-transcript.md"
+            transcript_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Get the last user message and assistant response
+            last_messages = []
+            for msg in reversed(self.conversation_history):
+                if msg["role"] in ["user", "assistant"]:
+                    last_messages.insert(0, msg)
+                    if len(last_messages) >= 2:
+                        break
+
+            if not last_messages:
+                return
+
+            # Build transcript entry
+            entry = []
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            if not transcript_file.exists():
+                entry.append("# Full Conversation Transcript\n\n")
+                entry.append("Complete history of all agent conversations.\n\n")
+                entry.append("---\n\n")
+
+            entry.append(f"## [{timestamp}] {self.get_agent_name(self.current_agent)}\n\n")
+
+            for msg in last_messages:
+                if msg["role"] == "user":
+                    entry.append("**You:**\n\n")
+                    entry.append(f"{msg['content']}\n\n")
+                elif msg["role"] == "assistant":
+                    entry.append(f"**{self.get_agent_name(self.current_agent)}:**\n\n")
+                    entry.append(f"{msg['content']}\n\n")
+
+            entry.append("---\n\n")
+
+            # Append to transcript
+            with open(transcript_file, 'a') as f:
+                f.write(''.join(entry))
+
+        except Exception as e:
+            print(f"[Agent Manager] Error appending to transcript: {e}")

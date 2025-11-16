@@ -48,13 +48,35 @@ class ProjectManager:
 
             # Create directory structure
             ensure_dir(project_dir)
-            ensure_dir(project_dir / "planning")
+
+            # Outline folder with revisions
+            ensure_dir(project_dir / "outline")
+            ensure_dir(project_dir / "outline" / "revisions")
+
+            # Conversations folder (auto-populated by agent_manager)
+            ensure_dir(project_dir / "conversations")
+
+            # Manuscript with chapters and scenes
             ensure_dir(project_dir / "manuscript")
+            ensure_dir(project_dir / "manuscript" / "chapters")
+            ensure_dir(project_dir / "manuscript" / "scenes")
+
+            # Story bible for continuity tracking
             ensure_dir(project_dir / "story-bible")
-            ensure_dir(project_dir / "feedback")
+
+            # Research and feedback
             ensure_dir(project_dir / "research")
+            ensure_dir(project_dir / "feedback")
+
+            # Legacy outputs directory (kept for compatibility)
             ensure_dir(project_dir / self.OUTPUTS_DIR)
+
+            # Versions for snapshots
             ensure_dir(project_dir / self.VERSIONS_DIR)
+
+            # Create initial outline file
+            outline_file = project_dir / "outline" / "current-outline.md"
+            outline_file.write_text("# Story Outline\n\n*Your outline will appear here as you work with the Architect agent.*\n")
 
             # Create configuration
             config = {
@@ -332,3 +354,104 @@ class ProjectManager:
         """Update project configuration"""
         if self.current_config:
             self.current_config.update(updates)
+
+    def get_progress_stats(self) -> Dict:
+        """
+        Get project progress statistics
+
+        Returns:
+            Dictionary with word_count, target_word_count, completion_percent
+        """
+        if not self.current_project_dir:
+            return {"word_count": 0, "target_word_count": 0, "completion_percent": 0}
+
+        # Count words in manuscript
+        word_count = 0
+        manuscript_dir = self.current_project_dir / "manuscript"
+
+        # Count from chapters
+        chapters_dir = manuscript_dir / "chapters"
+        if chapters_dir.exists():
+            for chapter_file in chapters_dir.glob("*.md"):
+                content = chapter_file.read_text()
+                words = len(content.split())
+                word_count += words
+
+        # Count from scenes if no chapters
+        if word_count == 0:
+            scenes_dir = manuscript_dir / "scenes"
+            if scenes_dir.exists():
+                for scene_file in scenes_dir.glob("*.md"):
+                    content = scene_file.read_text()
+                    words = len(content.split())
+                    word_count += words
+
+        # Count from final story if nothing else
+        if word_count == 0:
+            final_story = manuscript_dir / "final_story.md"
+            if final_story.exists():
+                content = final_story.read_text()
+                word_count = len(content.split())
+
+        # Get target from config
+        target = self.current_config.get("metadata", {}).get("target_word_count", 80000) if self.current_config else 80000
+
+        # Calculate completion percentage
+        completion = (word_count / target * 100) if target > 0 else 0
+
+        return {
+            "word_count": word_count,
+            "target_word_count": target,
+            "completion_percent": min(completion, 100)  # Cap at 100%
+        }
+
+    def list_conversations(self) -> List[Dict]:
+        """
+        List all agent conversations
+
+        Returns:
+            List of conversation info dictionaries
+        """
+        if not self.current_project_dir:
+            return []
+
+        conversations = []
+        conversations_dir = self.current_project_dir / "conversations"
+
+        if not conversations_dir.exists():
+            return []
+
+        # Get full transcript
+        transcript_file = conversations_dir / "full-transcript.md"
+        if transcript_file.exists():
+            conversations.append({
+                "type": "transcript",
+                "name": "Full Transcript",
+                "path": str(transcript_file),
+                "agent": "all"
+            })
+
+        # Get agent-specific conversations
+        for agent_dir in sorted(conversations_dir.iterdir()):
+            if agent_dir.is_dir() and agent_dir.name.startswith("agent-"):
+                # Extract agent number from directory name (e.g., "agent-1-architect-agent")
+                parts = agent_dir.name.split("-")
+                if len(parts) >= 2:
+                    agent_num = parts[1]
+                    agent_name = self.AGENTS.get(agent_num, {}).get("name", f"Agent {agent_num}")
+
+                    # List session files in this agent's directory
+                    for session_file in sorted(agent_dir.glob("*.md"), reverse=True):
+                        # Parse timestamp from filename
+                        timestamp = session_file.stem.replace("-session", "").replace("_", " ")
+
+                        conversations.append({
+                            "type": "session",
+                            "name": f"{agent_name} - {timestamp}",
+                            "path": str(session_file),
+                            "agent": agent_num,
+                            "agent_name": agent_name,
+                            "timestamp": timestamp
+                        })
+
+        return conversations

@@ -277,9 +277,12 @@ class ExportTab:
         success, message = self.project_manager.create_version(version_name or None)
 
         if success:
-            messagebox.showinfo("Success", message)
+            # Show success in entry placeholder briefly
             self.version_name_entry.delete(0, "end")
+            self.version_name_entry.configure(placeholder_text="✓ Version created!")
             self._refresh_versions()
+            # Reset placeholder after 2 seconds
+            self.parent.after(2000, lambda: self.version_name_entry.configure(placeholder_text="Optional version name"))
         else:
             messagebox.showerror("Error", message)
 
