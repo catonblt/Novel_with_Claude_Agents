@@ -212,7 +212,27 @@ class AgentManager:
 
     def is_api_configured(self) -> bool:
         """Check if Claude API is configured"""
-        return self.client is not None
+        # Always check current environment for API key
+        # (in case it was added after initialization)
+        api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+
+        if api_key and len(api_key) > 50 and api_key.startswith('sk-ant-'):
+            # Valid key exists - reinitialize client if needed
+            if not self.client and ANTHROPIC_AVAILABLE:
+                try:
+                    self.client = Anthropic(api_key=api_key)
+                    print(f"[Agent Manager] Initialized client with API key (length: {len(api_key)})")
+                except Exception as e:
+                    print(f"[Agent Manager] Failed to initialize client: {e}")
+                    return False
+            return True
+        else:
+            print(f"[Agent Manager] No valid API key found in environment")
+            print(f"[Agent Manager] ANTHROPIC_API_KEY in env: {'ANTHROPIC_API_KEY' in os.environ}")
+            if 'ANTHROPIC_API_KEY' in os.environ:
+                key_val = os.environ.get('ANTHROPIC_API_KEY', '')
+                print(f"[Agent Manager] Key length: {len(key_val)}, starts with sk-ant: {key_val.startswith('sk-ant-') if key_val else False}")
+            return False
 
     def get_last_agent_response(self) -> Optional[str]:
         """Get the last response from the agent"""

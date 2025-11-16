@@ -196,10 +196,14 @@ class GenerateTab:
 
         if not self.agent_manager.is_api_configured():
             messagebox.showerror(
-                "API Not Configured",
-                "Claude API is not configured.\n\n" +
-                "Please set the ANTHROPIC_API_KEY environment variable:\n\n" +
-                "export ANTHROPIC_API_KEY='your-api-key-here'"
+                "API Key Required",
+                "No valid Anthropic API key found.\n\n" +
+                "To set up your API key:\n" +
+                "1. Click 'Settings' in the top menu\n" +
+                "2. Click 'Change API Key'\n" +
+                "3. Paste your API key and save\n\n" +
+                "Get your API key from:\n" +
+                "https://console.anthropic.com/settings/keys"
             )
             return
 
