@@ -100,7 +100,13 @@ class APIKeyManager:
         api_key = api_key.strip()
 
         # Check minimum length (Anthropic keys are typically 100+ characters)
-        if len(api_key) < 20:
+        # Being very strict here - real keys are much longer
+        if len(api_key) < 50:
+            return False
+
+        # Anthropic keys start with specific prefixes
+        # Check if it starts with sk-ant- (standard format)
+        if not api_key.startswith('sk-ant-'):
             return False
 
         # Check if it looks like it could be a valid key (has some basic structure)
@@ -143,8 +149,19 @@ class APIKeyManager:
             return False, f"Error saving API key: {str(e)}"
 
     def is_configured(self) -> bool:
-        """Check if API key is configured"""
-        return self.get_api_key() is not None
+        """Check if API key is configured and valid"""
+        api_key = self.get_api_key()
+        is_valid = api_key is not None and len(api_key) > 0
+
+        # Debug logging (can be removed later)
+        if not is_valid:
+            print("[API Key Manager] No valid API key found")
+            print(f"[API Key Manager] .env file exists: {self.env_file.exists()}")
+            print(f"[API Key Manager] Environment variable set: {'ANTHROPIC_API_KEY' in os.environ}")
+        else:
+            print(f"[API Key Manager] Valid API key found (length: {len(api_key)})")
+
+        return is_valid
 
     def clear_api_key(self) -> Tuple[bool, str]:
         """
