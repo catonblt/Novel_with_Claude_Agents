@@ -45,9 +45,9 @@ class NovelWriterGUI(ctk.CTk):
         # Status
         self.current_project_path: Optional[Path] = None
 
-        # Keyboard shortcuts
-        self.bind("<Control-s>", lambda e: self._save_project())
-        self.bind("<Command-s>", lambda e: self._save_project())  # Mac
+        # Keyboard shortcuts - save silently without popup
+        self.bind("<Control-s>", lambda e: self._save_project_silent())
+        self.bind("<Command-s>", lambda e: self._save_project_silent())  # Mac
 
         # Check API key and show setup dialog if needed
         self.after(100, self._check_api_key)
@@ -169,31 +169,11 @@ class NovelWriterGUI(ctk.CTk):
 
                 # Switch to Configure tab to guide user
                 self.tabview.set("Configure")
-
-                # Show success message with guidance
-                project_path = str(self.project_manager.current_project_dir)
-                messagebox.showinfo(
-                    "Project Created Successfully!",
-                    f"Project created at:\n{project_path}\n\n" +
-                    "Next steps:\n" +
-                    "1. Fill in your story details in the Configure tab\n" +
-                    "2. Click 'Save Project' when done\n" +
-                    "3. Go to Generate tab to start writing with agents"
-                )
             else:
                 messagebox.showerror("Error", message)
 
     def _open_project(self):
         """Open an existing project"""
-        # Show helpful message first
-        messagebox.showinfo(
-            "Open Project",
-            "Select your project directory.\n\n" +
-            "The directory should contain a '.novel-config.json' file.\n\n" +
-            "Default location for new projects:\n" +
-            f"{Path.home() / 'NovelProjects'}"
-        )
-
         directory = filedialog.askdirectory(
             title="Select Project Directory (containing .novel-config.json)",
             initialdir=Path.home() / "NovelProjects" if (Path.home() / "NovelProjects").exists() else Path.home()
@@ -205,14 +185,17 @@ class NovelWriterGUI(ctk.CTk):
             if success:
                 self.current_project_path = Path(directory)
                 self._update_project_display()
-                messagebox.showinfo("Project Loaded", f"Successfully loaded: {message}")
+                # Show brief success in status
+                project_name = self.project_manager.get_config().get("project_name", "Project")
+                self.project_name_label.configure(text=f"✓ {project_name} loaded")
+                self.after(2000, self._update_project_display_name_only)
             else:
-                messagebox.showerror("Error", f"{message}\n\nMake sure you selected the correct project directory containing '.novel-config.json'")
+                messagebox.showerror("Error", f"{message}\n\nMake sure you selected the correct project directory.")
 
     def _save_project(self):
-        """Save current project"""
+        """Save current project with confirmation message"""
         if not self.project_manager.current_project_dir:
-            messagebox.showwarning("Warning", "No project loaded to save")
+            messagebox.showwarning("No Project", "Please create or open a project first.")
             return
 
         # Update config from configure tab
@@ -221,9 +204,31 @@ class NovelWriterGUI(ctk.CTk):
         success, message = self.project_manager.save_project()
 
         if success:
-            messagebox.showinfo("Success", message)
+            # Show brief success message
+            self.project_name_label.configure(text=f"✓ {self.project_manager.get_config().get('project_name', 'Project')} (saved)")
+            # Reset after 2 seconds
+            self.after(2000, self._update_project_display_name_only)
         else:
-            messagebox.showerror("Error", message)
+            messagebox.showerror("Save Error", message)
+
+    def _save_project_silent(self):
+        """Save current project silently (for keyboard shortcut)"""
+        if not self.project_manager.current_project_dir:
+            # Don't show annoying popup for keyboard shortcut
+            return
+
+        # Update config from configure tab
+        self.configure_tab.save_to_config()
+
+        success, message = self.project_manager.save_project()
+
+        if success:
+            # Just update the status label briefly
+            original_text = self.project_name_label.cget("text")
+            self.project_name_label.configure(text=f"✓ Saved")
+            # Reset after 1.5 seconds
+            self.after(1500, lambda: self.project_name_label.configure(text=original_text))
+        # Silently fail - user can use Save Project button for explicit feedback
 
     def _update_project_display(self):
         """Update UI to reflect loaded project"""
@@ -236,6 +241,13 @@ class NovelWriterGUI(ctk.CTk):
             self.configure_tab.load_from_config()
             self.review_tab.refresh()
             self.export_tab.refresh()
+
+    def _update_project_display_name_only(self):
+        """Update just the project name label without refreshing tabs"""
+        config = self.project_manager.get_config()
+        if config:
+            project_name = config.get("project_name", "Unknown Project")
+            self.project_name_label.configure(text=f"Project: {project_name}")
 
     def _check_api_key(self):
         """Check if API key is configured and show setup dialog if not"""
@@ -265,19 +277,8 @@ class NovelWriterGUI(ctk.CTk):
 
     def _show_welcome(self):
         """Show welcome message on first launch"""
-        if not self.project_manager.current_project_dir:
-            response = messagebox.showinfo(
-                "Welcome to Novel Writer!",
-                "Welcome to the Multi-Agent Novel Writing System!\n\n" +
-                "To get started:\n" +
-                "1. Click 'New Project' to create your first novel project\n" +
-                "2. Fill in your story details in the Configure tab\n" +
-                "3. Chat with AI agents in the Generate tab\n" +
-                "4. Review and export your work\n\n" +
-                "💡 Tip: Use Ctrl+S (Cmd+S on Mac) to save at any time\n\n" +
-                "Ready to create your first project?"
-            )
-            # Could offer to create project now, but keep it simple for now
+        # Don't show annoying welcome popup - the UI is self-explanatory
+        pass
 
 
 class NewProjectDialog(ctk.CTkToplevel):

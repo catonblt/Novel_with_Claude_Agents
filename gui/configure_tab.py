@@ -470,9 +470,8 @@ class ConfigureTab:
 
         if not self.project_manager.current_project_dir:
             messagebox.showwarning(
-                "No Project Loaded",
-                "Please create or open a project first.\n\n" +
-                "Click 'New Project' in the menu to get started."
+                "No Project",
+                "Please create or open a project first.\n\nClick 'New Project' in the menu to get started."
             )
             return
 
@@ -483,13 +482,29 @@ class ConfigureTab:
         success, message = self.project_manager.save_project()
 
         if success:
-            messagebox.showinfo(
-                "Configuration Saved!",
-                "Your story configuration has been saved successfully!\n\n" +
-                "You can now go to the Generate tab to start working with agents."
-            )
+            # Show success in the button itself temporarily
+            import customtkinter as ctk
+            # Find the save button and update it
+            self._show_save_success()
         else:
-            messagebox.showerror("Error", f"Failed to save configuration:\n{message}")
+            messagebox.showerror("Save Error", f"Failed to save configuration:\n{message}")
+
+    def _show_save_success(self):
+        """Show save success visually without popup"""
+        # This is a simpler approach - just show a brief confirmation in the info panel
+        # Create a temporary success label if it doesn't exist
+        if not hasattr(self, 'save_success_label'):
+            self.save_success_label = ctk.CTkLabel(
+                self.scroll_frame,
+                text="",
+                font=("Arial", 12, "bold"),
+                text_color="green"
+            )
+            self.save_success_label.pack(after=self.content_frame, pady=10)
+
+        self.save_success_label.configure(text="✓ Configuration saved successfully!")
+        # Clear after 3 seconds
+        self.scroll_frame.after(3000, lambda: self.save_success_label.configure(text=""))
 
     def get_story_context(self) -> dict:
         """Get story context for agent manager"""

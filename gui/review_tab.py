@@ -174,11 +174,12 @@ class ReviewTab:
 
         if success:
             self.unsaved_changes = False
-            self.unsaved_indicator.configure(text="")
+            self.unsaved_indicator.configure(text="✓ Saved", text_color="green")
             self.text_editor.edit_modified(False)
-            messagebox.showinfo("Success", "Changes saved successfully")
+            # Clear the saved indicator after 2 seconds
+            self.parent.after(2000, lambda: self.unsaved_indicator.configure(text=""))
         else:
-            messagebox.showerror("Error", message)
+            messagebox.showerror("Save Error", message)
 
     def _on_text_modified(self, event=None):
         """Handle text modification"""

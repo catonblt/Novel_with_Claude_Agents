@@ -344,10 +344,17 @@ class GenerateTab:
 
         if success:
             self._log(f"Agent output saved: {message}")
-            messagebox.showinfo("Success", message)
+            # Update status label instead of popup
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Output saved to file", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
         else:
             self._log(f"Error saving output: {message}")
-            messagebox.showerror("Error", message)
+            messagebox.showerror("Save Error", message)
 
     def _clear_conversation(self):
         """Clear the conversation"""
