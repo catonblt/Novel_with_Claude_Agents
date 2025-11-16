@@ -30,13 +30,15 @@ class GenerateTab:
         main_container = ctk.CTkFrame(self.parent)
         main_container.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Left panel - Chat interface (60% width)
+        # Left panel - Chat interface (75% width - much bigger!)
         left_panel = ctk.CTkFrame(main_container)
         left_panel.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        left_panel.grid_columnconfigure(0, weight=3)  # Give more weight to left panel
 
-        # Right panel - Logs (40% width)
+        # Right panel - Logs (25% width - smaller)
         right_panel = ctk.CTkFrame(main_container)
-        right_panel.pack(side="right", fill="both", expand=True, padx=(5, 0))
+        right_panel.pack(side="right", fill="both", padx=(5, 0))
+        right_panel.configure(width=300)  # Fixed narrower width
 
         # === LEFT PANEL: Chat Interface ===
 
@@ -209,6 +211,10 @@ class GenerateTab:
 
         agent_num = self.agent_var.get().split(".")[0].strip()
         self.current_agent = agent_num
+
+        # Set project directory for auto-saving conversations
+        if self.project_manager.current_project_dir:
+            self.agent_manager.set_project_directory(self.project_manager.current_project_dir)
 
         # Get story context from config
         config = self.project_manager.get_config()
