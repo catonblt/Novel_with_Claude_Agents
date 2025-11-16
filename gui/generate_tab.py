@@ -360,6 +360,9 @@ class GenerateTab:
 
         self._log(f"Response completed ({len(full_response)} characters)")
 
+        # Auto-detect and save chapters/outlines
+        self._auto_save_content(full_response)
+
     def _on_response_error(self, error: str):
         """Handle response error"""
         self._add_to_chat(f"[ERROR] {error}", "error")
@@ -376,6 +379,42 @@ class GenerateTab:
         self._log("Generation stopped by user")
         self.status_label.configure(text="Status: Stopped")
         self.stop_btn.configure(state="disabled")
+
+    def _auto_save_content(self, response: str):
+        """Automatically detect and save chapters or outlines from agent response"""
+        if not response or len(response.strip()) < 100:
+            return  # Too short to be a chapter or outline
+
+        # Check if this looks like a chapter (starts with "# Chapter" or similar)
+        lines = response.strip().split('\n')
+        first_line = lines[0].strip() if lines else ""
+
+        if first_line.startswith('# Chapter') or first_line.startswith('## Chapter'):
+            # Auto-save as chapter
+            success, message = self.project_manager.save_chapter(response)
+            if success:
+                self._log(f"[AUTO-SAVE] {message}")
+                return
+
+        # Check if this looks like an outline (contains outline-related keywords)
+        outline_keywords = ['# Outline', '# Story Outline', '## Outline', 'Act I', 'Act II', 'Act III']
+        content_lower = response.lower()
+
+        # Check for outline structure
+        if any(keyword.lower() in content_lower[:500] for keyword in outline_keywords):
+            # Count structure markers (Acts, Parts, etc.)
+            structure_count = sum([
+                content_lower.count('act '),
+                content_lower.count('part '),
+                content_lower.count('section ')
+            ])
+
+            # If it has outline structure, save it
+            if structure_count >= 2 or '# outline' in content_lower[:200]:
+                success, message = self.project_manager.save_outline(response)
+                if success:
+                    self._log(f"[AUTO-SAVE] {message}")
+                    return
 
     def _save_agent_output(self):
         """Save the agent's output"""

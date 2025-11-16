@@ -202,7 +202,7 @@ class ProjectManager:
 
     def save_chapter(self, content: str, chapter_name: str = None) -> Tuple[bool, str]:
         """
-        Save content as a chapter in manuscript/chapters/
+        Save content as a chapter in manuscript/chapters/ with version history
 
         Args:
             content: Chapter content
@@ -236,6 +236,22 @@ class ProjectManager:
                 chapter_name = f"{chapter_name}.md"
 
             chapter_path = chapters_dir / chapter_name
+
+            # If chapter already exists, create a version backup
+            if chapter_path.exists():
+                versions_dir = chapters_dir / "versions"
+                ensure_dir(versions_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                # Remove .md extension for version naming
+                base_name = chapter_name.replace('.md', '')
+                version_path = versions_dir / f"{base_name}-{timestamp}.md"
+
+                # Copy current chapter to versions
+                current_content = chapter_path.read_text(encoding='utf-8')
+                version_path.write_text(current_content, encoding='utf-8')
+
+            # Write new chapter
             with open(chapter_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
