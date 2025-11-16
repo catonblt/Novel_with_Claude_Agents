@@ -51,6 +51,86 @@ class AgentManager:
         """Set the current project directory for auto-saving conversations"""
         self.current_project_dir = Path(project_dir)
 
+    def _load_project_files(self) -> str:
+        """Load all relevant project files to provide context to agents"""
+        if not self.current_project_dir:
+            return ""
+
+        context_parts = []
+
+        # Load current outline
+        outline_file = self.current_project_dir / "outline" / "current-outline.md"
+        if outline_file.exists():
+            try:
+                outline_content = outline_file.read_text(encoding='utf-8')
+                context_parts.append("\n## Current Outline\n\n")
+                context_parts.append(outline_content)
+                context_parts.append("\n")
+            except Exception as e:
+                print(f"[Agent Manager] Error loading outline: {e}")
+
+        # Load story bible
+        story_bible_dir = self.current_project_dir / "story-bible"
+        if story_bible_dir.exists():
+            bible_files = sorted(story_bible_dir.glob("*.md"))
+            if bible_files:
+                context_parts.append("\n## Story Bible\n\n")
+                for bible_file in bible_files:
+                    try:
+                        bible_content = bible_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {bible_file.stem}\n\n")
+                        context_parts.append(bible_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {bible_file.name}: {e}")
+
+        # Load existing chapters
+        chapters_dir = self.current_project_dir / "manuscript" / "chapters"
+        if chapters_dir.exists():
+            chapter_files = sorted(chapters_dir.glob("*.md"))
+            if chapter_files:
+                context_parts.append("\n## Existing Chapters\n\n")
+                for chapter_file in chapter_files:
+                    try:
+                        chapter_content = chapter_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {chapter_file.stem}\n\n")
+                        context_parts.append(chapter_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {chapter_file.name}: {e}")
+
+        # Load existing scenes
+        scenes_dir = self.current_project_dir / "manuscript" / "scenes"
+        if scenes_dir.exists():
+            scene_files = sorted(scenes_dir.glob("*.md"))
+            if scene_files:
+                context_parts.append("\n## Existing Scenes\n\n")
+                for scene_file in scene_files:
+                    try:
+                        scene_content = scene_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {scene_file.stem}\n\n")
+                        context_parts.append(scene_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {scene_file.name}: {e}")
+
+        # Load research files
+        research_dir = self.current_project_dir / "research"
+        if research_dir.exists():
+            research_files = sorted(research_dir.glob("*.md"))
+            if research_files:
+                context_parts.append("\n## Research Notes\n\n")
+                for research_file in research_files:
+                    try:
+                        research_content = research_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {research_file.stem}\n\n")
+                        context_parts.append(research_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {research_file.name}: {e}")
+
+        return ''.join(context_parts)
+
     def load_agent_instructions(self, agent_num: str) -> Optional[str]:
         """Load instructions for a specific agent"""
         agent_info = self.AGENTS.get(agent_num)
@@ -96,18 +176,26 @@ class AgentManager:
         if instructions:
             # Build context message with story information
             context_parts = [
-                "# Story Context\n",
-                f"**Story Idea:** {story_context.get('story_idea', 'Not specified')}\n"
+                "# Story Context\n\n",
+                f"**Story Idea:** {story_context.get('story_idea', 'Not specified')}\n\n"
             ]
 
             if story_context.get('themes'):
-                context_parts.append(f"**Themes:** {', '.join(story_context.get('themes', []))}\n")
+                context_parts.append(f"**Themes:** {', '.join(story_context.get('themes', []))}\n\n")
 
             if story_context.get('genre'):
-                context_parts.append(f"**Genre:** {story_context.get('genre', 'Literary Fiction')}\n")
+                context_parts.append(f"**Genre:** {story_context.get('genre', 'Literary Fiction')}\n\n")
 
             if story_context.get('target_word_count'):
-                context_parts.append(f"**Target Word Count:** {story_context.get('target_word_count', 80000):,}\n")
+                context_parts.append(f"**Target Word Count:** {story_context.get('target_word_count', 80000):,}\n\n")
+
+            # Load all project files (outline, chapters, scenes, story bible, research)
+            project_files = self._load_project_files()
+            if project_files:
+                context_parts.append("\n---\n\n")
+                context_parts.append("# Project Files\n\n")
+                context_parts.append("Below are all the current files in this novel project. Use this information to maintain consistency and build upon existing work.\n")
+                context_parts.append(project_files)
 
             context = ''.join(context_parts)
 
