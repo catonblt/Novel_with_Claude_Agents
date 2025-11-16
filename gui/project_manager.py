@@ -200,6 +200,107 @@ class ProjectManager:
         except Exception as e:
             return False, f"Error saving agent output: {str(e)}"
 
+    def save_chapter(self, content: str, chapter_name: str = None) -> Tuple[bool, str]:
+        """
+        Save content as a chapter in manuscript/chapters/ with version history
+
+        Args:
+            content: Chapter content
+            chapter_name: Optional chapter name (will auto-detect from content if not provided)
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.current_project_dir:
+            return False, "No project loaded"
+
+        try:
+            chapters_dir = self.current_project_dir / "manuscript" / "chapters"
+            ensure_dir(chapters_dir)
+
+            # Auto-detect chapter name from content if not provided
+            if not chapter_name:
+                # Try to extract from first line if it starts with "# Chapter"
+                lines = content.strip().split('\n')
+                if lines and lines[0].startswith('# Chapter'):
+                    chapter_name = slugify(lines[0].replace('#', '').strip())
+                else:
+                    # Use timestamp if no chapter heading found
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    chapter_name = f"chapter-{timestamp}"
+            else:
+                chapter_name = slugify(chapter_name)
+
+            # Add .md extension if not present
+            if not chapter_name.endswith('.md'):
+                chapter_name = f"{chapter_name}.md"
+
+            chapter_path = chapters_dir / chapter_name
+
+            # If chapter already exists, create a version backup
+            if chapter_path.exists():
+                versions_dir = chapters_dir / "versions"
+                ensure_dir(versions_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                # Remove .md extension for version naming
+                base_name = chapter_name.replace('.md', '')
+                version_path = versions_dir / f"{base_name}-{timestamp}.md"
+
+                # Copy current chapter to versions
+                current_content = chapter_path.read_text(encoding='utf-8')
+                version_path.write_text(current_content, encoding='utf-8')
+
+            # Write new chapter
+            with open(chapter_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            return True, f"Chapter saved to {chapter_name}"
+
+        except Exception as e:
+            return False, f"Error saving chapter: {str(e)}"
+
+    def save_outline(self, content: str) -> Tuple[bool, str]:
+        """
+        Save content as the current outline
+
+        Args:
+            content: Outline content
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.current_project_dir:
+            return False, "No project loaded"
+
+        try:
+            outline_dir = self.current_project_dir / "outline"
+            ensure_dir(outline_dir)
+
+            # Save to current-outline.md
+            outline_path = outline_dir / "current-outline.md"
+
+            # If outline already exists, create a revision backup
+            if outline_path.exists():
+                revisions_dir = outline_dir / "revisions"
+                ensure_dir(revisions_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                revision_path = revisions_dir / f"outline-{timestamp}.md"
+
+                # Copy current outline to revisions
+                current_content = outline_path.read_text(encoding='utf-8')
+                revision_path.write_text(current_content, encoding='utf-8')
+
+            # Write new outline
+            with open(outline_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            return True, "Outline saved to current-outline.md"
+
+        except Exception as e:
+            return False, f"Error saving outline: {str(e)}"
+
     def load_agent_output(self, agent_num: str) -> Tuple[bool, str, str]:
         """
         Load output from a specific agent

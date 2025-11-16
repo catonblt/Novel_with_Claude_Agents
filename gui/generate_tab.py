@@ -133,19 +133,37 @@ class GenerateTab:
         )
         self.stop_btn.pack(side="left", padx=5)
 
+        save_outline_btn = ctk.CTkButton(
+            control_frame,
+            text="Save as Outline",
+            command=self._save_as_outline,
+            width=120,
+            fg_color="#8B4513"
+        )
+        save_outline_btn.pack(side="right", padx=5)
+
+        save_chapter_btn = ctk.CTkButton(
+            control_frame,
+            text="Save as Chapter",
+            command=self._save_as_chapter,
+            width=120,
+            fg_color="#2B7A0B"
+        )
+        save_chapter_btn.pack(side="right", padx=5)
+
         save_output_btn = ctk.CTkButton(
             control_frame,
-            text="Save Agent Output",
+            text="Save Output",
             command=self._save_agent_output,
-            width=150
+            width=100
         )
         save_output_btn.pack(side="right", padx=5)
 
         clear_btn = ctk.CTkButton(
             control_frame,
-            text="Clear Conversation",
+            text="Clear Chat",
             command=self._clear_conversation,
-            width=150,
+            width=100,
             fg_color="gray"
         )
         clear_btn.pack(side="right", padx=5)
@@ -342,6 +360,9 @@ class GenerateTab:
 
         self._log(f"Response completed ({len(full_response)} characters)")
 
+        # Auto-detect and save chapters/outlines
+        self._auto_save_content(full_response)
+
     def _on_response_error(self, error: str):
         """Handle response error"""
         self._add_to_chat(f"[ERROR] {error}", "error")
@@ -358,6 +379,42 @@ class GenerateTab:
         self._log("Generation stopped by user")
         self.status_label.configure(text="Status: Stopped")
         self.stop_btn.configure(state="disabled")
+
+    def _auto_save_content(self, response: str):
+        """Automatically detect and save chapters or outlines from agent response"""
+        if not response or len(response.strip()) < 100:
+            return  # Too short to be a chapter or outline
+
+        # Check if this looks like a chapter (starts with "# Chapter" or similar)
+        lines = response.strip().split('\n')
+        first_line = lines[0].strip() if lines else ""
+
+        if first_line.startswith('# Chapter') or first_line.startswith('## Chapter'):
+            # Auto-save as chapter
+            success, message = self.project_manager.save_chapter(response)
+            if success:
+                self._log(f"[AUTO-SAVE] {message}")
+                return
+
+        # Check if this looks like an outline (contains outline-related keywords)
+        outline_keywords = ['# Outline', '# Story Outline', '## Outline', 'Act I', 'Act II', 'Act III']
+        content_lower = response.lower()
+
+        # Check for outline structure
+        if any(keyword.lower() in content_lower[:500] for keyword in outline_keywords):
+            # Count structure markers (Acts, Parts, etc.)
+            structure_count = sum([
+                content_lower.count('act '),
+                content_lower.count('part '),
+                content_lower.count('section ')
+            ])
+
+            # If it has outline structure, save it
+            if structure_count >= 2 or '# outline' in content_lower[:200]:
+                success, message = self.project_manager.save_outline(response)
+                if success:
+                    self._log(f"[AUTO-SAVE] {message}")
+                    return
 
     def _save_agent_output(self):
         """Save the agent's output"""
@@ -385,6 +442,62 @@ class GenerateTab:
             ))
         else:
             self._log(f"Error saving output: {message}")
+            messagebox.showerror("Save Error", message)
+
+    def _save_as_chapter(self):
+        """Save the agent's output as a chapter"""
+        if not self.current_agent:
+            messagebox.showwarning("Warning", "No agent conversation active")
+            return
+
+        # Get last agent response
+        response = self.agent_manager.get_last_agent_response()
+        if not response:
+            messagebox.showwarning("Warning", "No agent output to save")
+            return
+
+        success, message = self.project_manager.save_chapter(response)
+
+        if success:
+            self._log(f"Chapter saved: {message}")
+            # Update status label
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Chapter saved", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
+        else:
+            self._log(f"Error saving chapter: {message}")
+            messagebox.showerror("Save Error", message)
+
+    def _save_as_outline(self):
+        """Save the agent's output as the current outline"""
+        if not self.current_agent:
+            messagebox.showwarning("Warning", "No agent conversation active")
+            return
+
+        # Get last agent response
+        response = self.agent_manager.get_last_agent_response()
+        if not response:
+            messagebox.showwarning("Warning", "No agent output to save")
+            return
+
+        success, message = self.project_manager.save_outline(response)
+
+        if success:
+            self._log(f"Outline saved: {message}")
+            # Update status label
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Outline saved", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
+        else:
+            self._log(f"Error saving outline: {message}")
             messagebox.showerror("Save Error", message)
 
     def _clear_conversation(self):
