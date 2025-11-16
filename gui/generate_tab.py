@@ -100,18 +100,23 @@ class GenerateTab:
         input_frame = ctk.CTkFrame(left_panel)
         input_frame.pack(fill="x", padx=10, pady=(0, 10))
 
-        self.message_entry = ctk.CTkEntry(
+        # Multi-line text input box (4 lines tall)
+        self.message_entry = ctk.CTkTextbox(
             input_frame,
-            placeholder_text="Type your message to the agent..."
+            height=100,  # Approximately 4 lines
+            wrap="word"
         )
-        self.message_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
-        self.message_entry.bind("<Return>", lambda e: self._send_message())
+        self.message_entry.pack(side="left", fill="both", expand=True, padx=(0, 10))
+        # Bind Ctrl+Return or Cmd+Return to send message
+        self.message_entry.bind("<Control-Return>", lambda e: self._send_message())
+        self.message_entry.bind("<Command-Return>", lambda e: self._send_message())
 
         send_btn = ctk.CTkButton(
             input_frame,
-            text="Send",
+            text="Send\n(Ctrl+Enter)",
             command=self._send_message,
-            width=80
+            width=100,
+            height=100
         )
         send_btn.pack(side="right")
 
@@ -265,12 +270,13 @@ class GenerateTab:
             messagebox.showwarning("Warning", "Please start a conversation first")
             return
 
-        message = self.message_entry.get().strip()
+        # Get text from textbox (from start to end, excluding final newline)
+        message = self.message_entry.get("1.0", "end-1c").strip()
         if not message:
             return
 
-        # Clear entry
-        self.message_entry.delete(0, "end")
+        # Clear textbox
+        self.message_entry.delete("1.0", "end")
 
         # Add to chat
         self._add_to_chat(f"You: {message}", "user")
