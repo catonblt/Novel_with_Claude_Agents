@@ -249,12 +249,27 @@ class GenerateTab:
             if not response:
                 return
 
-        # Start conversation
-        self.agent_manager.start_conversation(agent_num, story_context)
+        # Start conversation (returns previous messages if continuing)
+        previous_messages = self.agent_manager.start_conversation(agent_num, story_context)
 
         agent_name = self.agent_manager.get_agent_name(agent_num)
-        self._add_to_chat(f"[SYSTEM] Started conversation with {agent_name}", "system")
-        self._log(f"Conversation started with Agent {agent_num}: {agent_name}")
+
+        # Display previous conversation history if continuing
+        if previous_messages:
+            self._add_to_chat(f"[SYSTEM] Continuing conversation with {agent_name} ({len(previous_messages)} previous messages loaded)", "system")
+            self._log(f"Continuing conversation with Agent {agent_num}: {agent_name}")
+            self._log(f"Loaded {len(previous_messages)} previous messages")
+
+            # Display previous messages in the chat
+            for msg in previous_messages:
+                if msg["role"] == "user":
+                    self._add_to_chat(f"You: {msg['content']}", "user")
+                elif msg["role"] == "assistant":
+                    self._add_to_chat(f"{agent_name}: {msg['content']}", "agent")
+        else:
+            self._add_to_chat(f"[SYSTEM] Started new conversation with {agent_name}", "system")
+            self._log(f"Started new conversation with Agent {agent_num}: {agent_name}")
+
         self._log(f"Story context provided:")
         self._log(f"  - Genre: {story_context['genre']}")
         if story_context.get('story_idea'):

@@ -147,28 +147,119 @@ class AgentManager:
         """Get the name of an agent"""
         return self.AGENTS.get(agent_num, {}).get("name", f"Agent {agent_num}")
 
-    def start_conversation(self, agent_num: str, story_context: Dict) -> None:
+    def _get_most_recent_session(self, agent_num: str) -> Optional[Path]:
+        """Get the most recent conversation session file for an agent"""
+        if not self.current_project_dir:
+            return None
+
+        agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
+        conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
+
+        if not conversations_dir.exists():
+            return None
+
+        # Get all session files sorted by modification time (most recent first)
+        session_files = sorted(conversations_dir.glob("*-session.md"), key=lambda x: x.stat().st_mtime, reverse=True)
+
+        if session_files:
+            return session_files[0]
+        return None
+
+    def _load_previous_conversation(self, session_file: Path) -> List[Dict]:
+        """Load and parse a previous conversation from a session file"""
+        try:
+            content = session_file.read_text(encoding='utf-8')
+            messages = []
+
+            # Parse the markdown format back into messages
+            # Skip the header and metadata
+            lines = content.split('\n')
+            current_role = None
+            current_content = []
+
+            for line in lines:
+                # Detect message boundaries
+                if line.startswith('### You:'):
+                    # Save previous message if any
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                    current_role = "user"
+                elif line.startswith('###') and ':' in line and 'Agent' in line:
+                    # Save previous message if any
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                    current_role = "assistant"
+                elif line == '---':
+                    # Message separator - save current message
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                        current_role = None
+                elif current_role:
+                    # Accumulate content for current message
+                    current_content.append(line)
+
+            # Save last message if any
+            if current_role and current_content:
+                messages.append({
+                    "role": current_role,
+                    "content": '\n'.join(current_content).strip()
+                })
+
+            return messages
+
+        except Exception as e:
+            print(f"[Agent Manager] Error loading previous conversation: {e}")
+            return []
+
+    def start_conversation(self, agent_num: str, story_context: Dict) -> List[Dict]:
         """
-        Start a new conversation with an agent
+        Start a new conversation with an agent or continue existing one
 
         Args:
             agent_num: Agent number (1-9)
             story_context: Dictionary with story information (idea, themes, etc.)
+
+        Returns:
+            List of previous messages if continuing a conversation, empty list otherwise
         """
         self.current_agent = agent_num
         self.conversation_history = []
+        previous_messages = []
 
-        # Create a new conversation session file with timestamp
+        # Check for existing conversation session
         if self.current_project_dir:
             from datetime import datetime
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
 
-            # Create conversations directory structure
-            conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
-            conversations_dir.mkdir(parents=True, exist_ok=True)
+            # Try to load the most recent session for this agent
+            recent_session = self._get_most_recent_session(agent_num)
+            if recent_session:
+                # Continue the existing conversation
+                self.conversation_session_file = recent_session
+                previous_messages = self._load_previous_conversation(recent_session)
+                print(f"[Agent Manager] Continuing conversation from {recent_session.name}")
+            else:
+                # Create a new conversation session file with timestamp
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
 
-            self.conversation_session_file = conversations_dir / f"{timestamp}-session.md"
+                # Create conversations directory structure
+                conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
+                conversations_dir.mkdir(parents=True, exist_ok=True)
+
+                self.conversation_session_file = conversations_dir / f"{timestamp}-session.md"
+                print(f"[Agent Manager] Starting new conversation: {self.conversation_session_file.name}")
 
         # Load agent instructions
         instructions = self.load_agent_instructions(agent_num)
@@ -205,8 +296,15 @@ class AgentManager:
                 "content": f"{instructions}\n\n{context}"
             })
 
+            # Add previous messages to conversation history if continuing
+            if previous_messages:
+                self.conversation_history.extend(previous_messages)
+                print(f"[Agent Manager] Loaded {len(previous_messages)} previous messages")
+
             # Save conversation start to file
             self._auto_save_conversation()
+
+        return previous_messages
 
     def send_message(
         self,
