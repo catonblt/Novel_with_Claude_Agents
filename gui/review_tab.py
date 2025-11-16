@@ -326,7 +326,7 @@ class ReviewTab:
 
         try:
             if file_path.exists():
-                content = file_path.read_text()
+                content = file_path.read_text(encoding='utf-8')
                 self.text_editor.delete("1.0", "end")
                 self.text_editor.insert("1.0", content)
 
@@ -354,7 +354,7 @@ class ReviewTab:
 
         try:
             content = self.text_editor.get("1.0", "end-1c")
-            self.current_file_path.write_text(content)
+            self.current_file_path.write_text(content, encoding='utf-8')
 
             self.unsaved_changes = False
             self.unsaved_indicator.configure(text="✓ Saved", text_color="green")

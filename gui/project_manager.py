@@ -76,7 +76,7 @@ class ProjectManager:
 
             # Create initial outline file
             outline_file = project_dir / "outline" / "current-outline.md"
-            outline_file.write_text("# Story Outline\n\n*Your outline will appear here as you work with the Architect agent.*\n")
+            outline_file.write_text("# Story Outline\n\n*Your outline will appear here as you work with the Architect agent.*\n", encoding='utf-8')
 
             # Create configuration
             config = {
@@ -109,7 +109,7 @@ class ProjectManager:
             }
 
             config_path = project_dir / self.CONFIG_FILENAME
-            with open(config_path, 'w') as f:
+            with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2)
 
             self.current_project_dir = project_dir
@@ -133,7 +133,7 @@ class ProjectManager:
             if not config_path.exists():
                 return False, f"No project configuration found at {directory}"
 
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
 
             self.current_project_dir = Path(directory)
@@ -159,7 +159,7 @@ class ProjectManager:
             self.current_config["metadata"]["last_modified"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             config_path = self.current_project_dir / self.CONFIG_FILENAME
-            with open(config_path, 'w') as f:
+            with open(config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.current_config, f, indent=2)
 
             return True, "Project saved successfully"
@@ -189,7 +189,7 @@ class ProjectManager:
             filename = f"agent_{agent_num}_{slugify(agent_name)}.md"
 
             output_path = outputs_dir / filename
-            with open(output_path, 'w') as f:
+            with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(f"# {agent_name} Output\n\n")
                 f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                 f.write("---\n\n")
@@ -220,7 +220,7 @@ class ProjectManager:
             if not output_path.exists():
                 return False, "", f"No output found for Agent {agent_num}"
 
-            with open(output_path, 'r') as f:
+            with open(output_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
             return True, content, "Output loaded successfully"
@@ -243,7 +243,7 @@ class ProjectManager:
             ensure_dir(manuscript_dir)
 
             story_path = manuscript_dir / "final_story.md"
-            with open(story_path, 'w') as f:
+            with open(story_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
             return True, "Final story saved"
@@ -267,7 +267,7 @@ class ProjectManager:
             if not story_path.exists():
                 return False, "", "No final story found"
 
-            with open(story_path, 'r') as f:
+            with open(story_path, 'r', encoding='utf-8') as f:
                 content = f.read()
 
             return True, content, "Story loaded successfully"
@@ -312,7 +312,7 @@ class ProjectManager:
                 "project_name": self.current_config.get("project_name", "Unknown")
             }
 
-            with open(version_dir / "version_info.json", 'w') as f:
+            with open(version_dir / "version_info.json", 'w', encoding='utf-8') as f:
                 json.dump(version_info, f, indent=2)
 
             return True, f"Version '{version_name}' created"
@@ -339,7 +339,7 @@ class ProjectManager:
             if version_dir.is_dir():
                 info_file = version_dir / "version_info.json"
                 if info_file.exists():
-                    with open(info_file, 'r') as f:
+                    with open(info_file, 'r', encoding='utf-8') as f:
                         info = json.load(f)
                         info['path'] = str(version_dir)
                         versions.append(info)
@@ -373,7 +373,7 @@ class ProjectManager:
         chapters_dir = manuscript_dir / "chapters"
         if chapters_dir.exists():
             for chapter_file in chapters_dir.glob("*.md"):
-                content = chapter_file.read_text()
+                content = chapter_file.read_text(encoding='utf-8')
                 words = len(content.split())
                 word_count += words
 
@@ -382,7 +382,7 @@ class ProjectManager:
             scenes_dir = manuscript_dir / "scenes"
             if scenes_dir.exists():
                 for scene_file in scenes_dir.glob("*.md"):
-                    content = scene_file.read_text()
+                    content = scene_file.read_text(encoding='utf-8')
                     words = len(content.split())
                     word_count += words
 
@@ -390,7 +390,7 @@ class ProjectManager:
         if word_count == 0:
             final_story = manuscript_dir / "final_story.md"
             if final_story.exists():
-                content = final_story.read_text()
+                content = final_story.read_text(encoding='utf-8')
                 word_count = len(content.split())
 
         # Get target from config
