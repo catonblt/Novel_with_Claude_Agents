@@ -135,18 +135,27 @@ class GenerateTab:
 
         save_outline_btn = ctk.CTkButton(
             control_frame,
-            text="Save as Outline",
+            text="Save Outline",
             command=self._save_as_outline,
-            width=120,
+            width=100,
             fg_color="#8B4513"
         )
         save_outline_btn.pack(side="right", padx=5)
 
+        save_scene_btn = ctk.CTkButton(
+            control_frame,
+            text="Save Scene",
+            command=self._save_as_scene,
+            width=90,
+            fg_color="#9B30FF"
+        )
+        save_scene_btn.pack(side="right", padx=5)
+
         save_chapter_btn = ctk.CTkButton(
             control_frame,
-            text="Save as Chapter",
+            text="Save Chapter",
             command=self._save_as_chapter,
-            width=120,
+            width=100,
             fg_color="#2B7A0B"
         )
         save_chapter_btn.pack(side="right", padx=5)
@@ -155,7 +164,7 @@ class GenerateTab:
             control_frame,
             text="Save Output",
             command=self._save_agent_output,
-            width=100
+            width=90
         )
         save_output_btn.pack(side="right", padx=5)
 
@@ -381,39 +390,87 @@ class GenerateTab:
         self.stop_btn.configure(state="disabled")
 
     def _auto_save_content(self, response: str):
-        """Automatically detect and save chapters or outlines from agent response"""
+        """Automatically detect and save chapters, scenes, or outlines from agent response"""
         if not response or len(response.strip()) < 100:
             return  # Too short to be a chapter or outline
 
-        # Check if this looks like a chapter (starts with "# Chapter" or similar)
         lines = response.strip().split('\n')
         first_line = lines[0].strip() if lines else ""
+        content_lower = response.lower()
 
-        if first_line.startswith('# Chapter') or first_line.startswith('## Chapter'):
-            # Auto-save as chapter
+        # === CHAPTER DETECTION ===
+        # Check multiple chapter formats
+        is_chapter = False
+        chapter_indicators = [
+            '# chapter',
+            '## chapter',
+            '# ch.',
+            '## ch.',
+            'chapter one', 'chapter two', 'chapter three', 'chapter four', 'chapter five',
+            'chapter 1', 'chapter 2', 'chapter 3', 'chapter 4', 'chapter 5',
+            'chapter 6', 'chapter 7', 'chapter 8', 'chapter 9', 'chapter 10'
+        ]
+
+        if any(indicator in first_line.lower() for indicator in ['# chapter', '## chapter', '# ch.', '## ch.']):
+            is_chapter = True
+        elif any(indicator in content_lower[:200] for indicator in chapter_indicators):
+            is_chapter = True
+
+        if is_chapter:
             success, message = self.project_manager.save_chapter(response)
             if success:
                 self._log(f"[AUTO-SAVE] {message}")
+                # Update status briefly
+                original_status = self.status_label.cget("text")
+                self.status_label.configure(text="✓ Chapter auto-saved", text_color="green")
+                self.parent.after(2000, lambda: self.status_label.configure(
+                    text=original_status,
+                    text_color="gray"
+                ))
                 return
 
-        # Check if this looks like an outline (contains outline-related keywords)
-        outline_keywords = ['# Outline', '# Story Outline', '## Outline', 'Act I', 'Act II', 'Act III']
-        content_lower = response.lower()
+        # === SCENE DETECTION ===
+        # Check for scene markers
+        scene_indicators = ['# scene', '## scene', 'scene:', 'scene -']
+        is_scene = any(indicator in first_line.lower() for indicator in scene_indicators)
+
+        if is_scene:
+            success, message = self.project_manager.save_scene(response)
+            if success:
+                self._log(f"[AUTO-SAVE] {message}")
+                original_status = self.status_label.cget("text")
+                self.status_label.configure(text="✓ Scene auto-saved", text_color="green")
+                self.parent.after(2000, lambda: self.status_label.configure(
+                    text=original_status,
+                    text_color="gray"
+                ))
+                return
+
+        # === OUTLINE DETECTION ===
+        # Check if this looks like an outline
+        outline_keywords = ['# outline', '# story outline', '## outline', 'act i', 'act ii', 'act iii', 'act 1', 'act 2', 'act 3']
 
         # Check for outline structure
-        if any(keyword.lower() in content_lower[:500] for keyword in outline_keywords):
-            # Count structure markers (Acts, Parts, etc.)
+        if any(keyword in content_lower[:500] for keyword in outline_keywords):
+            # Count structure markers
             structure_count = sum([
                 content_lower.count('act '),
                 content_lower.count('part '),
-                content_lower.count('section ')
+                content_lower.count('section '),
+                content_lower.count('chapter ')
             ])
 
             # If it has outline structure, save it
-            if structure_count >= 2 or '# outline' in content_lower[:200]:
+            if structure_count >= 3 or '# outline' in content_lower[:200]:
                 success, message = self.project_manager.save_outline(response)
                 if success:
                     self._log(f"[AUTO-SAVE] {message}")
+                    original_status = self.status_label.cget("text")
+                    self.status_label.configure(text="✓ Outline auto-saved", text_color="green")
+                    self.parent.after(2000, lambda: self.status_label.configure(
+                        text=original_status,
+                        text_color="gray"
+                    ))
                     return
 
     def _save_agent_output(self):
@@ -470,6 +527,34 @@ class GenerateTab:
             ))
         else:
             self._log(f"Error saving chapter: {message}")
+            messagebox.showerror("Save Error", message)
+
+    def _save_as_scene(self):
+        """Save the agent's output as a scene"""
+        if not self.current_agent:
+            messagebox.showwarning("Warning", "No agent conversation active")
+            return
+
+        # Get last agent response
+        response = self.agent_manager.get_last_agent_response()
+        if not response:
+            messagebox.showwarning("Warning", "No agent output to save")
+            return
+
+        success, message = self.project_manager.save_scene(response)
+
+        if success:
+            self._log(f"Scene saved: {message}")
+            # Update status label
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Scene saved", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
+        else:
+            self._log(f"Error saving scene: {message}")
             messagebox.showerror("Save Error", message)
 
     def _save_as_outline(self):

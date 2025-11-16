@@ -285,7 +285,13 @@ class AgentManager:
             if project_files:
                 context_parts.append("\n---\n\n")
                 context_parts.append("# Project Files\n\n")
-                context_parts.append("Below are all the current files in this novel project. Use this information to maintain consistency and build upon existing work.\n")
+                context_parts.append("Below are all the current files in this novel project. Use this information to maintain consistency and build upon existing work.\n\n")
+                context_parts.append("**IMPORTANT - Updating Files:**\n")
+                context_parts.append("- To UPDATE an existing chapter: Start your response with the exact chapter heading (e.g., `# Chapter 1` or `# Chapter One`)\n")
+                context_parts.append("- To UPDATE the outline: Include `# Outline` or `# Story Outline` in your response\n")
+                context_parts.append("- To CREATE a new chapter: Use the next chapter number in sequence\n")
+                context_parts.append("- All updates are automatically saved with version history - previous versions are never lost\n")
+                context_parts.append("- You can revise any existing file by matching its chapter/scene number or heading\n\n")
                 context_parts.append(project_files)
 
             context = ''.join(context_parts)

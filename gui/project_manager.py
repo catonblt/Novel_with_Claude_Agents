@@ -200,6 +200,35 @@ class ProjectManager:
         except Exception as e:
             return False, f"Error saving agent output: {str(e)}"
 
+    def _extract_chapter_number(self, content: str) -> Optional[int]:
+        """Extract chapter number from content"""
+        import re
+
+        # Check first few lines for chapter number
+        lines = content.strip().split('\n')[:5]
+
+        for line in lines:
+            line_lower = line.lower()
+
+            # Try numeric: "Chapter 1", "Chapter One", etc.
+            match = re.search(r'chapter\s+(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty)', line_lower)
+            if match:
+                number_str = match.group(1)
+                # Convert word to number
+                word_to_num = {
+                    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+                    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+                    'eleven': 11, 'twelve': 12, 'thirteen': 13, 'fourteen': 14,
+                    'fifteen': 15, 'sixteen': 16, 'seventeen': 17, 'eighteen': 18,
+                    'nineteen': 19, 'twenty': 20
+                }
+                if number_str.isdigit():
+                    return int(number_str)
+                elif number_str in word_to_num:
+                    return word_to_num[number_str]
+
+        return None
+
     def save_chapter(self, content: str, chapter_name: str = None) -> Tuple[bool, str]:
         """
         Save content as a chapter in manuscript/chapters/ with version history
@@ -220,20 +249,26 @@ class ProjectManager:
 
             # Auto-detect chapter name from content if not provided
             if not chapter_name:
-                # Try to extract from first line if it starts with "# Chapter"
-                lines = content.strip().split('\n')
-                if lines and lines[0].startswith('# Chapter'):
-                    chapter_name = slugify(lines[0].replace('#', '').strip())
+                # Try to extract chapter number first
+                chapter_num = self._extract_chapter_number(content)
+
+                if chapter_num:
+                    chapter_name = f"chapter-{chapter_num}.md"
                 else:
-                    # Use timestamp if no chapter heading found
-                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                    chapter_name = f"chapter-{timestamp}"
+                    # Try to extract from first line
+                    lines = content.strip().split('\n')
+                    if lines and ('chapter' in lines[0].lower() or 'ch.' in lines[0].lower()):
+                        chapter_name = slugify(lines[0].replace('#', '').strip())
+                        if not chapter_name.endswith('.md'):
+                            chapter_name = f"{chapter_name}.md"
+                    else:
+                        # Use timestamp if no chapter heading found
+                        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                        chapter_name = f"chapter-{timestamp}.md"
             else:
                 chapter_name = slugify(chapter_name)
-
-            # Add .md extension if not present
-            if not chapter_name.endswith('.md'):
-                chapter_name = f"{chapter_name}.md"
+                if not chapter_name.endswith('.md'):
+                    chapter_name = f"{chapter_name}.md"
 
             chapter_path = chapters_dir / chapter_name
 
@@ -251,14 +286,81 @@ class ProjectManager:
                 current_content = chapter_path.read_text(encoding='utf-8')
                 version_path.write_text(current_content, encoding='utf-8')
 
+                action = "updated"
+            else:
+                action = "created"
+
             # Write new chapter
             with open(chapter_path, 'w', encoding='utf-8') as f:
                 f.write(content)
 
-            return True, f"Chapter saved to {chapter_name}"
+            return True, f"Chapter {action}: {chapter_name}"
 
         except Exception as e:
             return False, f"Error saving chapter: {str(e)}"
+
+    def save_scene(self, content: str, scene_name: str = None) -> Tuple[bool, str]:
+        """
+        Save content as a scene in manuscript/scenes/ with version history
+
+        Args:
+            content: Scene content
+            scene_name: Optional scene name (will auto-detect from content if not provided)
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.current_project_dir:
+            return False, "No project loaded"
+
+        try:
+            scenes_dir = self.current_project_dir / "manuscript" / "scenes"
+            ensure_dir(scenes_dir)
+
+            # Auto-detect scene name from content if not provided
+            if not scene_name:
+                # Try to extract from first line
+                lines = content.strip().split('\n')
+                if lines and ('scene' in lines[0].lower()):
+                    scene_name = slugify(lines[0].replace('#', '').replace('Scene:', '').replace('Scene -', '').strip())
+                else:
+                    # Use timestamp if no scene heading found
+                    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                    scene_name = f"scene-{timestamp}"
+            else:
+                scene_name = slugify(scene_name)
+
+            # Add .md extension if not present
+            if not scene_name.endswith('.md'):
+                scene_name = f"{scene_name}.md"
+
+            scene_path = scenes_dir / scene_name
+
+            # If scene already exists, create a version backup
+            if scene_path.exists():
+                versions_dir = scenes_dir / "versions"
+                ensure_dir(versions_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                base_name = scene_name.replace('.md', '')
+                version_path = versions_dir / f"{base_name}-{timestamp}.md"
+
+                # Copy current scene to versions
+                current_content = scene_path.read_text(encoding='utf-8')
+                version_path.write_text(current_content, encoding='utf-8')
+
+                action = "updated"
+            else:
+                action = "created"
+
+            # Write new scene
+            with open(scene_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            return True, f"Scene {action}: {scene_name}"
+
+        except Exception as e:
+            return False, f"Error saving scene: {str(e)}"
 
     def save_outline(self, content: str) -> Tuple[bool, str]:
         """
