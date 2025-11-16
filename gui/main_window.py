@@ -13,6 +13,8 @@ from .configure_tab import ConfigureTab
 from .generate_tab import GenerateTab
 from .review_tab import ReviewTab
 from .export_tab import ExportTab
+from .api_key_manager import APIKeyManager
+from .api_key_dialog import APIKeyDialog
 
 
 class NovelWriterGUI(ctk.CTk):
@@ -32,6 +34,7 @@ class NovelWriterGUI(ctk.CTk):
         self.geometry("1400x900")
 
         # Initialize managers
+        self.api_key_manager = APIKeyManager()
         self.project_manager = ProjectManager(self.framework_root)
         self.agent_manager = AgentManager(self.framework_root)
 
@@ -45,6 +48,9 @@ class NovelWriterGUI(ctk.CTk):
         # Keyboard shortcuts
         self.bind("<Control-s>", lambda e: self._save_project())
         self.bind("<Command-s>", lambda e: self._save_project())  # Mac
+
+        # Check API key and show setup dialog if needed
+        self.after(100, self._check_api_key)
 
         # Show welcome message on first launch
         self.after(500, self._show_welcome)
@@ -84,6 +90,16 @@ class NovelWriterGUI(ctk.CTk):
         )
         btn_save.pack(side="left", padx=5, pady=5)
 
+        # Settings button
+        btn_settings = ctk.CTkButton(
+            menu_frame,
+            text="⚙️ Settings",
+            command=self._show_settings,
+            width=100,
+            height=30
+        )
+        btn_settings.pack(side="left", padx=5, pady=5)
+
         # Project name label (on right)
         self.project_name_label = ctk.CTkLabel(
             menu_frame,
@@ -91,6 +107,16 @@ class NovelWriterGUI(ctk.CTk):
             font=("Arial", 12, "italic")
         )
         self.project_name_label.pack(side="right", padx=20, pady=5)
+
+        # API key status indicator
+        self.api_status_label = ctk.CTkLabel(
+            menu_frame,
+            text="",
+            font=("Arial", 10),
+            text_color="gray"
+        )
+        self.api_status_label.pack(side="right", padx=5, pady=5)
+        self._update_api_status()
 
     def _create_main_content(self):
         """Create main content area with tabs"""
@@ -210,6 +236,32 @@ class NovelWriterGUI(ctk.CTk):
             self.configure_tab.load_from_config()
             self.review_tab.refresh()
             self.export_tab.refresh()
+
+    def _check_api_key(self):
+        """Check if API key is configured and show setup dialog if not"""
+        if not self.api_key_manager.is_configured():
+            dialog = APIKeyDialog(self, self.api_key_manager)
+            dialog.wait_window()
+            self._update_api_status()
+
+    def _update_api_status(self):
+        """Update API key status indicator"""
+        if self.api_key_manager.is_configured():
+            self.api_status_label.configure(
+                text="✓ API Key Configured",
+                text_color="green"
+            )
+        else:
+            self.api_status_label.configure(
+                text="⚠ No API Key",
+                text_color="orange"
+            )
+
+    def _show_settings(self):
+        """Show settings dialog"""
+        dialog = SettingsDialog(self, self.api_key_manager)
+        dialog.wait_window()
+        self._update_api_status()
 
     def _show_welcome(self):
         """Show welcome message on first launch"""
@@ -340,3 +392,117 @@ class NewProjectDialog(ctk.CTkToplevel):
 
         self.result = (name, author, Path(directory) if directory else None)
         self.destroy()
+
+
+class SettingsDialog(ctk.CTkToplevel):
+    """Dialog for application settings"""
+
+    def __init__(self, parent, api_key_manager: APIKeyManager):
+        super().__init__(parent)
+
+        self.api_key_manager = api_key_manager
+
+        self.title("Settings")
+        self.geometry("500x300")
+        self.resizable(False, False)
+
+        # Make modal
+        self.transient(parent)
+        self.grab_set()
+
+        self._create_widgets()
+
+        # Center on parent
+        self.update_idletasks()
+        x = parent.winfo_x() + (parent.winfo_width() - self.winfo_width()) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - self.winfo_height()) // 2
+        self.geometry(f"+{x}+{y}")
+
+    def _create_widgets(self):
+        """Create dialog widgets"""
+        # Title
+        title = ctk.CTkLabel(
+            self,
+            text="⚙️ Settings",
+            font=("Arial", 18, "bold")
+        )
+        title.pack(pady=20)
+
+        # Settings frame
+        settings_frame = ctk.CTkFrame(self)
+        settings_frame.pack(fill="both", expand=True, padx=30, pady=10)
+
+        # API Key section
+        ctk.CTkLabel(
+            settings_frame,
+            text="Anthropic API Key",
+            font=("Arial", 14, "bold")
+        ).pack(anchor="w", padx=15, pady=(15, 10))
+
+        # Status
+        if self.api_key_manager.is_configured():
+            status_text = "✓ API key is configured"
+            status_color = "green"
+        else:
+            status_text = "⚠ No API key configured"
+            status_color = "orange"
+
+        ctk.CTkLabel(
+            settings_frame,
+            text=status_text,
+            text_color=status_color,
+            font=("Arial", 11)
+        ).pack(anchor="w", padx=15, pady=5)
+
+        # Buttons
+        button_frame = ctk.CTkFrame(settings_frame)
+        button_frame.pack(anchor="w", padx=15, pady=10)
+
+        change_key_btn = ctk.CTkButton(
+            button_frame,
+            text="Change API Key",
+            command=self._change_api_key,
+            width=150
+        )
+        change_key_btn.pack(side="left", padx=5)
+
+        if self.api_key_manager.is_configured():
+            clear_key_btn = ctk.CTkButton(
+                button_frame,
+                text="Remove API Key",
+                command=self._clear_api_key,
+                width=150,
+                fg_color="red"
+            )
+            clear_key_btn.pack(side="left", padx=5)
+
+        # Close button
+        close_btn = ctk.CTkButton(
+            self,
+            text="Close",
+            command=self.destroy,
+            width=120
+        )
+        close_btn.pack(pady=20)
+
+    def _change_api_key(self):
+        """Show API key setup dialog"""
+        dialog = APIKeyDialog(self, self.api_key_manager)
+        dialog.wait_window()
+        self.destroy()  # Close settings after changing key
+
+    def _clear_api_key(self):
+        """Clear the API key"""
+        response = messagebox.askyesno(
+            "Confirm Removal",
+            "Are you sure you want to remove your API key?\n\n" +
+            "You won't be able to use AI agents until you add a new key."
+        )
+
+        if response:
+            success, message = self.api_key_manager.clear_api_key()
+            if success:
+                messagebox.showinfo("API Key Removed", "Your API key has been removed successfully.")
+                self.destroy()
+            else:
+                messagebox.showerror("Error", f"Failed to remove API key:\n{message}")

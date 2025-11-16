@@ -39,3 +39,8 @@ Thumbs.db
 # Project specific
 *.docx
 NovelProjects/
+
+# API Keys and secrets
+.env
+.env.*
+!.env.example
