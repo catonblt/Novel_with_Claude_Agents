@@ -51,6 +51,86 @@ class AgentManager:
         """Set the current project directory for auto-saving conversations"""
         self.current_project_dir = Path(project_dir)
 
+    def _load_project_files(self) -> str:
+        """Load all relevant project files to provide context to agents"""
+        if not self.current_project_dir:
+            return ""
+
+        context_parts = []
+
+        # Load current outline
+        outline_file = self.current_project_dir / "outline" / "current-outline.md"
+        if outline_file.exists():
+            try:
+                outline_content = outline_file.read_text(encoding='utf-8')
+                context_parts.append("\n## Current Outline\n\n")
+                context_parts.append(outline_content)
+                context_parts.append("\n")
+            except Exception as e:
+                print(f"[Agent Manager] Error loading outline: {e}")
+
+        # Load story bible
+        story_bible_dir = self.current_project_dir / "story-bible"
+        if story_bible_dir.exists():
+            bible_files = sorted(story_bible_dir.glob("*.md"))
+            if bible_files:
+                context_parts.append("\n## Story Bible\n\n")
+                for bible_file in bible_files:
+                    try:
+                        bible_content = bible_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {bible_file.stem}\n\n")
+                        context_parts.append(bible_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {bible_file.name}: {e}")
+
+        # Load existing chapters
+        chapters_dir = self.current_project_dir / "manuscript" / "chapters"
+        if chapters_dir.exists():
+            chapter_files = sorted(chapters_dir.glob("*.md"))
+            if chapter_files:
+                context_parts.append("\n## Existing Chapters\n\n")
+                for chapter_file in chapter_files:
+                    try:
+                        chapter_content = chapter_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {chapter_file.stem}\n\n")
+                        context_parts.append(chapter_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {chapter_file.name}: {e}")
+
+        # Load existing scenes
+        scenes_dir = self.current_project_dir / "manuscript" / "scenes"
+        if scenes_dir.exists():
+            scene_files = sorted(scenes_dir.glob("*.md"))
+            if scene_files:
+                context_parts.append("\n## Existing Scenes\n\n")
+                for scene_file in scene_files:
+                    try:
+                        scene_content = scene_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {scene_file.stem}\n\n")
+                        context_parts.append(scene_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {scene_file.name}: {e}")
+
+        # Load research files
+        research_dir = self.current_project_dir / "research"
+        if research_dir.exists():
+            research_files = sorted(research_dir.glob("*.md"))
+            if research_files:
+                context_parts.append("\n## Research Notes\n\n")
+                for research_file in research_files:
+                    try:
+                        research_content = research_file.read_text(encoding='utf-8')
+                        context_parts.append(f"### {research_file.stem}\n\n")
+                        context_parts.append(research_content)
+                        context_parts.append("\n")
+                    except Exception as e:
+                        print(f"[Agent Manager] Error loading {research_file.name}: {e}")
+
+        return ''.join(context_parts)
+
     def load_agent_instructions(self, agent_num: str) -> Optional[str]:
         """Load instructions for a specific agent"""
         agent_info = self.AGENTS.get(agent_num)
@@ -67,28 +147,119 @@ class AgentManager:
         """Get the name of an agent"""
         return self.AGENTS.get(agent_num, {}).get("name", f"Agent {agent_num}")
 
-    def start_conversation(self, agent_num: str, story_context: Dict) -> None:
+    def _get_most_recent_session(self, agent_num: str) -> Optional[Path]:
+        """Get the most recent conversation session file for an agent"""
+        if not self.current_project_dir:
+            return None
+
+        agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
+        conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
+
+        if not conversations_dir.exists():
+            return None
+
+        # Get all session files sorted by modification time (most recent first)
+        session_files = sorted(conversations_dir.glob("*-session.md"), key=lambda x: x.stat().st_mtime, reverse=True)
+
+        if session_files:
+            return session_files[0]
+        return None
+
+    def _load_previous_conversation(self, session_file: Path) -> List[Dict]:
+        """Load and parse a previous conversation from a session file"""
+        try:
+            content = session_file.read_text(encoding='utf-8')
+            messages = []
+
+            # Parse the markdown format back into messages
+            # Skip the header and metadata
+            lines = content.split('\n')
+            current_role = None
+            current_content = []
+
+            for line in lines:
+                # Detect message boundaries
+                if line.startswith('### You:'):
+                    # Save previous message if any
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                    current_role = "user"
+                elif line.startswith('###') and ':' in line and 'Agent' in line:
+                    # Save previous message if any
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                    current_role = "assistant"
+                elif line == '---':
+                    # Message separator - save current message
+                    if current_role and current_content:
+                        messages.append({
+                            "role": current_role,
+                            "content": '\n'.join(current_content).strip()
+                        })
+                        current_content = []
+                        current_role = None
+                elif current_role:
+                    # Accumulate content for current message
+                    current_content.append(line)
+
+            # Save last message if any
+            if current_role and current_content:
+                messages.append({
+                    "role": current_role,
+                    "content": '\n'.join(current_content).strip()
+                })
+
+            return messages
+
+        except Exception as e:
+            print(f"[Agent Manager] Error loading previous conversation: {e}")
+            return []
+
+    def start_conversation(self, agent_num: str, story_context: Dict) -> List[Dict]:
         """
-        Start a new conversation with an agent
+        Start a new conversation with an agent or continue existing one
 
         Args:
             agent_num: Agent number (1-9)
             story_context: Dictionary with story information (idea, themes, etc.)
+
+        Returns:
+            List of previous messages if continuing a conversation, empty list otherwise
         """
         self.current_agent = agent_num
         self.conversation_history = []
+        previous_messages = []
 
-        # Create a new conversation session file with timestamp
+        # Check for existing conversation session
         if self.current_project_dir:
             from datetime import datetime
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
 
-            # Create conversations directory structure
-            conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
-            conversations_dir.mkdir(parents=True, exist_ok=True)
+            # Try to load the most recent session for this agent
+            recent_session = self._get_most_recent_session(agent_num)
+            if recent_session:
+                # Continue the existing conversation
+                self.conversation_session_file = recent_session
+                previous_messages = self._load_previous_conversation(recent_session)
+                print(f"[Agent Manager] Continuing conversation from {recent_session.name}")
+            else:
+                # Create a new conversation session file with timestamp
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                agent_name = self.get_agent_name(agent_num).lower().replace(" ", "-")
 
-            self.conversation_session_file = conversations_dir / f"{timestamp}-session.md"
+                # Create conversations directory structure
+                conversations_dir = self.current_project_dir / "conversations" / f"agent-{agent_num}-{agent_name}"
+                conversations_dir.mkdir(parents=True, exist_ok=True)
+
+                self.conversation_session_file = conversations_dir / f"{timestamp}-session.md"
+                print(f"[Agent Manager] Starting new conversation: {self.conversation_session_file.name}")
 
         # Load agent instructions
         instructions = self.load_agent_instructions(agent_num)
@@ -96,18 +267,26 @@ class AgentManager:
         if instructions:
             # Build context message with story information
             context_parts = [
-                "# Story Context\n",
-                f"**Story Idea:** {story_context.get('story_idea', 'Not specified')}\n"
+                "# Story Context\n\n",
+                f"**Story Idea:** {story_context.get('story_idea', 'Not specified')}\n\n"
             ]
 
             if story_context.get('themes'):
-                context_parts.append(f"**Themes:** {', '.join(story_context.get('themes', []))}\n")
+                context_parts.append(f"**Themes:** {', '.join(story_context.get('themes', []))}\n\n")
 
             if story_context.get('genre'):
-                context_parts.append(f"**Genre:** {story_context.get('genre', 'Literary Fiction')}\n")
+                context_parts.append(f"**Genre:** {story_context.get('genre', 'Literary Fiction')}\n\n")
 
             if story_context.get('target_word_count'):
-                context_parts.append(f"**Target Word Count:** {story_context.get('target_word_count', 80000):,}\n")
+                context_parts.append(f"**Target Word Count:** {story_context.get('target_word_count', 80000):,}\n\n")
+
+            # Load all project files (outline, chapters, scenes, story bible, research)
+            project_files = self._load_project_files()
+            if project_files:
+                context_parts.append("\n---\n\n")
+                context_parts.append("# Project Files\n\n")
+                context_parts.append("Below are all the current files in this novel project. Use this information to maintain consistency and build upon existing work.\n")
+                context_parts.append(project_files)
 
             context = ''.join(context_parts)
 
@@ -117,8 +296,15 @@ class AgentManager:
                 "content": f"{instructions}\n\n{context}"
             })
 
+            # Add previous messages to conversation history if continuing
+            if previous_messages:
+                self.conversation_history.extend(previous_messages)
+                print(f"[Agent Manager] Loaded {len(previous_messages)} previous messages")
+
             # Save conversation start to file
             self._auto_save_conversation()
+
+        return previous_messages
 
     def send_message(
         self,
