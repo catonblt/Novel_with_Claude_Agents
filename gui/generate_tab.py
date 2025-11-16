@@ -14,10 +14,11 @@ from .utils import format_timestamp
 class GenerateTab:
     """Generate tab with chat interface and real-time logs"""
 
-    def __init__(self, parent, project_manager: ProjectManager, agent_manager: AgentManager):
+    def __init__(self, parent, project_manager: ProjectManager, agent_manager: AgentManager, review_tab=None):
         self.parent = parent
         self.project_manager = project_manager
         self.agent_manager = agent_manager
+        self.review_tab = review_tab  # Reference to review tab for auto-refresh
 
         self.current_agent: Optional[str] = None
         self.full_response = ""
@@ -389,10 +390,52 @@ class GenerateTab:
         self.status_label.configure(text="Status: Stopped")
         self.stop_btn.configure(state="disabled")
 
+    def _is_narrative_content(self, content: str) -> bool:
+        """
+        Determine if content is actual narrative prose vs discussion about writing
+
+        Returns True if content appears to be actual story content
+        """
+        # Check for discussion/meta-writing indicators
+        discussion_phrases = [
+            'let me', 'i can', 'i will', 'i would', 'i suggest', 'i recommend',
+            'here is', 'here are', "here's", 'this chapter', 'this scene',
+            'the chapter should', 'you could', 'you should', 'you might',
+            'we could', 'we should', 'consider', 'i think', 'perhaps we',
+            'what if', 'how about', 'in this chapter', 'for this chapter',
+            'regarding', 'concerning', 'my suggestion', 'my recommendation'
+        ]
+
+        content_lower = content.lower()
+        first_500 = content_lower[:500]
+
+        # If it contains many discussion phrases, it's probably meta-writing
+        discussion_count = sum(1 for phrase in discussion_phrases if phrase in first_500)
+        if discussion_count >= 3:
+            return False
+
+        # Check for narrative indicators
+        has_dialogue = content.count('"') >= 4 or content.count("'") >= 4
+        has_paragraphs = content.count('\n\n') >= 3
+        has_narrative_past_tense = any(word in content_lower for word in [' walked ', ' said ', ' looked ', ' felt ', ' thought ', ' saw ', ' heard '])
+
+        # Check word count - narrative should be substantial
+        word_count = len(content.split())
+
+        # Narrative content should have:
+        # - Reasonable length (800+ words for chapters)
+        # - Multiple paragraphs
+        # - Either dialogue or narrative verbs
+        if word_count >= 800 and has_paragraphs and (has_dialogue or has_narrative_past_tense):
+            return True
+
+        return False
+
     def _auto_save_content(self, response: str):
         """Automatically detect and save chapters, scenes, or outlines from agent response"""
-        if not response or len(response.strip()) < 100:
-            return  # Too short to be a chapter or outline
+        # SAFEGUARD: Minimum length requirement - must be substantial
+        if not response or len(response.strip()) < 500:
+            return  # Too short to be meaningful content
 
         lines = response.strip().split('\n')
         first_line = lines[0].strip() if lines else ""
@@ -406,17 +449,42 @@ class GenerateTab:
             '## chapter',
             '# ch.',
             '## ch.',
-            'chapter one', 'chapter two', 'chapter three', 'chapter four', 'chapter five',
-            'chapter 1', 'chapter 2', 'chapter 3', 'chapter 4', 'chapter 5',
-            'chapter 6', 'chapter 7', 'chapter 8', 'chapter 9', 'chapter 10'
         ]
 
-        if any(indicator in first_line.lower() for indicator in ['# chapter', '## chapter', '# ch.', '## ch.']):
-            is_chapter = True
-        elif any(indicator in content_lower[:200] for indicator in chapter_indicators):
+        # SAFEGUARD: Only detect chapter if it starts with proper heading
+        if any(indicator in first_line.lower() for indicator in chapter_indicators):
             is_chapter = True
 
         if is_chapter:
+            # SAFEGUARD: Check if this is actual narrative content vs discussion
+            if not self._is_narrative_content(response):
+                self._log("[AUTO-SAVE] Skipped - appears to be discussion about chapter, not actual content")
+                return
+
+            # SAFEGUARD: For chapters, require minimum 1500 characters
+            if len(response) < 1500:
+                self._log("[AUTO-SAVE] Skipped - chapter too short (minimum 1500 characters)")
+                return
+
+            # Check if chapter already exists
+            from pathlib import Path
+            chapter_num = self.project_manager._extract_chapter_number(response)
+            if chapter_num:
+                chapter_path = self.project_manager.current_project_dir / "manuscript" / "chapters" / f"chapter-{chapter_num}.md"
+
+                # SAFEGUARD: If chapter exists, ask for confirmation
+                if chapter_path.exists():
+                    confirm = messagebox.askyesno(
+                        "Confirm Chapter Update",
+                        f"Chapter {chapter_num} already exists.\n\n"
+                        f"Do you want to overwrite it?\n\n"
+                        f"(Previous version will be backed up to versions/)",
+                        icon='warning'
+                    )
+                    if not confirm:
+                        self._log(f"[AUTO-SAVE] Cancelled - user declined to overwrite Chapter {chapter_num}")
+                        return
+
             success, message = self.project_manager.save_chapter(response)
             if success:
                 self._log(f"[AUTO-SAVE] {message}")
@@ -427,14 +495,29 @@ class GenerateTab:
                     text=original_status,
                     text_color="gray"
                 ))
+
+                # Refresh review tab to show new chapter
+                if self.review_tab:
+                    self.review_tab.refresh()
+
                 return
 
         # === SCENE DETECTION ===
         # Check for scene markers
-        scene_indicators = ['# scene', '## scene', 'scene:', 'scene -']
+        scene_indicators = ['# scene', '## scene']
         is_scene = any(indicator in first_line.lower() for indicator in scene_indicators)
 
         if is_scene:
+            # SAFEGUARD: Check if this is actual narrative content
+            if not self._is_narrative_content(response):
+                self._log("[AUTO-SAVE] Skipped - appears to be discussion about scene, not actual content")
+                return
+
+            # SAFEGUARD: Scenes should be at least 800 characters
+            if len(response) < 800:
+                self._log("[AUTO-SAVE] Skipped - scene too short (minimum 800 characters)")
+                return
+
             success, message = self.project_manager.save_scene(response)
             if success:
                 self._log(f"[AUTO-SAVE] {message}")
@@ -444,14 +527,22 @@ class GenerateTab:
                     text=original_status,
                     text_color="gray"
                 ))
+
+                # Refresh review tab to show new scene
+                if self.review_tab:
+                    self.review_tab.refresh()
+
                 return
 
         # === OUTLINE DETECTION ===
         # Check if this looks like an outline
-        outline_keywords = ['# outline', '# story outline', '## outline', 'act i', 'act ii', 'act iii', 'act 1', 'act 2', 'act 3']
+        outline_keywords = ['# outline', '# story outline', '## outline']
 
-        # Check for outline structure
-        if any(keyword in content_lower[:500] for keyword in outline_keywords):
+        # SAFEGUARD: Only detect if heading is in first line or second line
+        first_two_lines = '\n'.join(lines[:2]).lower()
+        has_outline_heading = any(keyword in first_two_lines for keyword in outline_keywords)
+
+        if has_outline_heading:
             # Count structure markers
             structure_count = sum([
                 content_lower.count('act '),
@@ -460,8 +551,22 @@ class GenerateTab:
                 content_lower.count('chapter ')
             ])
 
-            # If it has outline structure, save it
-            if structure_count >= 3 or '# outline' in content_lower[:200]:
+            # SAFEGUARD: Require substantial structure (5+ markers) and length
+            if structure_count >= 5 and len(response) >= 500:
+                # SAFEGUARD: Check if outline exists, ask for confirmation
+                outline_path = self.project_manager.current_project_dir / "outline" / "current-outline.md"
+                if outline_path.exists():
+                    confirm = messagebox.askyesno(
+                        "Confirm Outline Update",
+                        "The outline already exists.\n\n"
+                        "Do you want to overwrite it?\n\n"
+                        "(Previous version will be backed up to revisions/)",
+                        icon='warning'
+                    )
+                    if not confirm:
+                        self._log("[AUTO-SAVE] Cancelled - user declined to overwrite outline")
+                        return
+
                 success, message = self.project_manager.save_outline(response)
                 if success:
                     self._log(f"[AUTO-SAVE] {message}")
@@ -471,6 +576,11 @@ class GenerateTab:
                         text=original_status,
                         text_color="gray"
                     ))
+
+                    # Refresh review tab to show new outline
+                    if self.review_tab:
+                        self.review_tab.refresh()
+
                     return
 
     def _save_agent_output(self):
@@ -525,6 +635,10 @@ class GenerateTab:
                 text=original_status,
                 text_color="gray"
             ))
+
+            # Refresh review tab to show new chapter
+            if self.review_tab:
+                self.review_tab.refresh()
         else:
             self._log(f"Error saving chapter: {message}")
             messagebox.showerror("Save Error", message)
@@ -553,6 +667,10 @@ class GenerateTab:
                 text=original_status,
                 text_color="gray"
             ))
+
+            # Refresh review tab to show new scene
+            if self.review_tab:
+                self.review_tab.refresh()
         else:
             self._log(f"Error saving scene: {message}")
             messagebox.showerror("Save Error", message)
@@ -581,6 +699,10 @@ class GenerateTab:
                 text=original_status,
                 text_color="gray"
             ))
+
+            # Refresh review tab to show new outline
+            if self.review_tab:
+                self.review_tab.refresh()
         else:
             self._log(f"Error saving outline: {message}")
             messagebox.showerror("Save Error", message)

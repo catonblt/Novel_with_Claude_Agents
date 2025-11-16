@@ -148,6 +148,9 @@ class NovelWriterGUI(ctk.CTk):
             self.project_manager
         )
 
+        # Connect generate_tab to review_tab for auto-refresh
+        self.generate_tab.review_tab = self.review_tab
+
         self.export_tab = ExportTab(
             self.tabview.tab("Export"),
             self.project_manager
