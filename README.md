@@ -1,10 +1,14 @@
 # Novel Writing with Claude Agents
 
-A sophisticated multi-agent system for collaborative literary fiction writing, where specialized AI agents work together with human authors to create psychologically rich, thematically deep novels.
+A sophisticated multi-agent desktop application for collaborative literary fiction writing. Specialized AI agents work together with you to create psychologically rich, thematically deep novels with professional-level attention to every aspect of craft.
+
+## 🖥️ Desktop Application
+
+Novel Writer is a **user-friendly desktop application** - no command line required! Just double-click to launch and start writing your novel.
 
 ## System Overview
 
-This project implements a 9-agent collaborative writing system, where each agent has specialized expertise in different aspects of literary fiction craft. The agents work together under human creative direction to develop and write novels with professional-level attention to:
+This application implements a 9-agent collaborative writing system, where each agent has specialized expertise in different aspects of literary fiction craft. The agents work together under your creative direction through an intuitive graphical interface to develop and write novels with professional-level attention to:
 
 - Narrative structure and thematic architecture
 - Prose style and linguistic artistry
@@ -133,71 +137,78 @@ This project implements a 9-agent collaborative writing system, where each agent
 - **Iterative Refinement**: Work develops through dialogue and revision
 - **Quality Standards**: Literary fiction excellence as the benchmark
 
-## Getting Started
+## 🚀 Getting Started - It's This Easy!
 
-### 🖥️ Desktop GUI Application (Recommended for Beginners)
+### Step 1: Install (One-Time Setup)
 
-**NEW!** We now offer a user-friendly desktop application with a modern dark mode interface:
+**Windows:**
+1. Double-click `Novel Writer.bat`
+2. The installer will run automatically
+3. Wait for "Installation Complete" message
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+**Mac:**
+1. Double-click `Novel Writer.command`
+2. If prompted, right-click → Open (for first-time security)
+3. The installer will run automatically
 
-# Set your Anthropic API key
-export ANTHROPIC_API_KEY='your-api-key-here'
+**Linux:**
+1. Double-click `Novel Writer.desktop` (or run `./novel-writer.sh`)
+2. The installer will run automatically
 
-# Launch the GUI
-python novel_gui.py
-```
+That's it! Dependencies install automatically.
 
-**Features:**
-- 📝 **Configure Tab**: Simple and Advanced modes for project setup
-- 💬 **Generate Tab**: Interactive chat with agents + real-time logs
-- 📖 **Review Tab**: View and edit all outputs in one place
-- 📤 **Export Tab**: Export to .docx, manage versions, compare drafts
+### Step 2: Launch the Application
 
-**See [GUI_README.md](GUI_README.md) for complete GUI documentation.**
+**Just double-click the same file again!**
+- Windows: `Novel Writer.bat`
+- Mac: `Novel Writer.command`
+- Linux: `Novel Writer.desktop` or `novel-writer.sh`
 
-### ⌨️ Command Line Interface (For Advanced Users)
+The application will open in a beautiful dark mode interface.
 
-This framework is **reusable** for writing multiple novels. Use the CLI to manage projects:
+### Step 3: Set Up Your API Key (One-Time)
 
-```bash
-# Create a new novel project
-python novel.py init "Your Novel Title" --author "Your Name"
+On first launch, you'll see a friendly dialog:
+1. Click "Get API Key from Anthropic" (opens your browser)
+2. Copy your API key
+3. Paste it into the dialog
+4. Click "Save and Continue"
 
-# Navigate to your project
-cd your-novel-title
+Done! Your API key is saved securely and you'll never need to enter it again.
 
-# Check project status
-python novel.py status
+### Step 4: Start Writing!
 
-# Start working with agents
-python novel.py agent 8  # Story Advocate (start here!)
-```
+1. Click "New Project"
+2. Enter your novel title and author name
+3. Fill in your story details in the Configure tab
+4. Click "💾 Save Configuration"
+5. Go to Generate tab and start chatting with agents!
 
-**See [GETTING_STARTED.md](GETTING_STARTED.md) for a complete quick start guide.**
+## ✨ Application Features
 
-### For New Projects - Detailed Steps
+- **📝 Configure Tab**: Simple and Advanced modes for project setup
+- **💬 Generate Tab**: Interactive chat with agents + real-time streaming responses
+- **📖 **Review Tab**: View and edit all outputs in one place
+- **📤 Export Tab**: Export to .docx, manage versions, compare drafts
+- **🔑 Automatic API Key Management**: Enter once, works forever
+- **💾 Auto-Save**: Ctrl+S (Cmd+S on Mac) to save anytime
+- **🌙 Dark Mode**: Easy on the eyes for long writing sessions
 
-1. Create a project using `novel.py init`
-2. Review agent descriptions with `novel.py agents`
-3. Read the workflow guide in `WORKFLOW.md`
-4. Begin with Story Advocate (Agent 8): `novel.py agent 8`
-5. Progress through phases: vision → planning → development → drafting → revision → polish
+**See [QUICK_START.md](QUICK_START.md) for a complete walkthrough.**
 
-### Agent Files
+## 📚 Agent Reference
 
-Each agent has a comprehensive specification document:
-- `/agents/01_ARCHITECT_AGENT.md`
-- `/agents/02_PROSE_STYLIST_AGENT.md`
-- `/agents/03_CHARACTER_PSYCHOLOGIST_AGENT.md`
-- `/agents/04_ATMOSPHERE_SETTING_AGENT.md`
-- `/agents/05_RESEARCH_AGENT.md`
-- `/agents/06_CONTINUITY_EDITOR_AGENT.md`
-- `/agents/07_BETA_READER_AGENT.md`
-- `/agents/08_STORY_ADVOCATE_AGENT.md`
-- `/agents/09_REDUNDANCY_EDITOR_AGENT.md`
+Each of the 9 agents has detailed capabilities documented in the `/agents/` directory. When working with agents in the application, you can refer to these specifications to understand exactly what each agent can help you with:
+
+- **Agent 1**: Architect - `/agents/01_ARCHITECT_AGENT.md`
+- **Agent 2**: Prose Stylist - `/agents/02_PROSE_STYLIST_AGENT.md`
+- **Agent 3**: Character Psychologist - `/agents/03_CHARACTER_PSYCHOLOGIST_AGENT.md`
+- **Agent 4**: Atmosphere & Setting - `/agents/04_ATMOSPHERE_SETTING_AGENT.md`
+- **Agent 5**: Research - `/agents/05_RESEARCH_AGENT.md`
+- **Agent 6**: Continuity Editor - `/agents/06_CONTINUITY_EDITOR_AGENT.md`
+- **Agent 7**: Beta Reader - `/agents/07_BETA_READER_AGENT.md`
+- **Agent 8**: Story Advocate - `/agents/08_STORY_ADVOCATE_AGENT.md` ⭐ *Start here!*
+- **Agent 9**: Redundancy Editor - `/agents/09_REDUNDANCY_EDITOR_AGENT.md`
 
 ## Key Features
 
@@ -240,103 +251,39 @@ This system operates on several core principles:
 
 5. **Process Supports Product**: Careful development process enables excellent final work
 
-## Project Structure
+## 📁 Your Novel Projects
+
+When you create a novel in the application, it creates a complete project structure:
 
 ```
-Novel_with_Claude_Agents/
-├── README.md                 # This file
-├── WORKFLOW.md              # Detailed workflow guide
-├── agents/                  # Agent specification documents
-│   ├── 01_ARCHITECT_AGENT.md
-│   ├── 02_PROSE_STYLIST_AGENT.md
-│   ├── 03_CHARACTER_PSYCHOLOGIST_AGENT.md
-│   ├── 04_ATMOSPHERE_SETTING_AGENT.md
-│   ├── 05_RESEARCH_AGENT.md
-│   ├── 06_CONTINUITY_EDITOR_AGENT.md
-│   ├── 07_BETA_READER_AGENT.md
-│   ├── 08_STORY_ADVOCATE_AGENT.md
-│   └── 09_REDUNDANCY_EDITOR_AGENT.md
-├── project/                 # Your novel project files
-│   ├── planning/           # Outlines, character docs, research
-│   ├── manuscript/         # Draft chapters and scenes
-│   ├── story-bible/        # Continuity tracking
-│   └── feedback/           # Beta reader reports
-└── templates/              # Reusable templates
-    ├── character-dossier.md
-    ├── chapter-outline.md
-    └── scene-template.md
+~/NovelProjects/your-novel-title/
+├── .novel-config.json      # Project configuration (auto-managed)
+├── planning/               # Planning documents
+├── manuscript/            # Your novel manuscript
+│   └── final_story.md
+├── story-bible/           # Continuity tracking
+├── feedback/              # Beta reader notes
+├── agent-outputs/         # Individual agent contributions
+│   ├── agent_1_architect-agent.md
+│   ├── agent_2_prose-stylist-agent.md
+│   └── ... (all 9 agents)
+└── versions/              # Version snapshots for comparison
+    ├── first-draft/
+    └── after-revision/
 ```
 
-## CLI Interface & Multiple Projects
+**Managing Multiple Novels:**
+- Create as many projects as you want
+- Switch between them using "Open Project" in the menu
+- Each project is completely independent
+- All files stored locally on your computer
 
-### The Novel CLI
+## 📖 Documentation
 
-The `novel.py` CLI makes it easy to create and manage multiple novel projects:
-
-```bash
-# Initialize new projects
-python novel.py init "Mystery Novel"
-python novel.py init "Literary Fiction"
-python novel.py init "Thriller"
-
-# Each project is independent with its own configuration and files
-```
-
-**Key Commands:**
-- `init` - Create a new novel project
-- `status` - View project information
-- `agent <number>` - Display agent instructions
-- `agents` - List all agents
-- `phase <name>` - Update project phase
-- `templates` - View available templates
-
-### Managing Multiple Novels
-
-Each novel project is self-contained:
-
-```
-~/writing/
-├── mystery-novel/
-│   ├── .novel-config.json    # Project configuration
-│   ├── planning/
-│   ├── manuscript/
-│   └── story-bible/
-├── literary-fiction/
-│   ├── .novel-config.json
-│   └── ...
-└── thriller/
-    ├── .novel-config.json
-    └── ...
-```
-
-Switch between projects by changing directories:
-```bash
-cd ~/writing/mystery-novel
-python novel.py status
-
-cd ~/writing/literary-fiction
-python novel.py status
-```
-
-### Configuration File
-
-Each project has a `.novel-config.json` that stores:
-- Project metadata (title, author, genre, word count target)
-- Vision (themes, tone, central questions)
-- Structure (POV, chronology, chapters)
-- Current phase (vision, planning, drafting, etc.)
-- Custom notes and settings
-
-See `example-novel-config.json` for a complete example.
-
-## Documentation
-
-- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Quick start guide (start here!)
-- **[USAGE.md](USAGE.md)** - Comprehensive usage guide with examples
-- **[WORKFLOW.md](WORKFLOW.md)** - Detailed phase-by-phase workflow
-- **[QUICK_START.md](QUICK_START.md)** - Condensed workflow overview
-- **example-novel-config.json** - Sample project configuration
-- **novel-config.schema.json** - Configuration file schema
+- **[QUICK_START.md](QUICK_START.md)** - Step-by-step walkthrough
+- **[WORKFLOW.md](WORKFLOW.md)** - Detailed writing workflow
+- **[GUI_TESTING.md](GUI_TESTING.md)** - Testing guide
+- **Agent Specifications** - See `/agents/` directory
 
 ## Contributing
 
@@ -360,34 +307,32 @@ This framework is provided for creative use. Adapt it freely for your literary p
 
 ---
 
-## Ready to Begin?
+## 🎉 Ready to Begin?
 
-**Using the GUI (Recommended):**
+### It's This Simple:
 
-```bash
-pip install -r requirements.txt
-export ANTHROPIC_API_KEY='your-api-key-here'
-python novel_gui.py
-```
+1. **Double-click** `Novel Writer.bat` (Windows) / `Novel Writer.command` (Mac) / `novel-writer.sh` (Linux)
+2. **Wait** for automatic installation (first time only)
+3. **Double-click again** to launch the application
+4. **Enter your API key** when prompted (one-time setup)
+5. **Click "New Project"** and start writing!
 
-**Then:**
-1. Click "New Project" and enter your novel details
-2. Configure your story in the Configure tab
-3. Start chatting with agents in the Generate tab
-4. Review and export your work!
+That's it! No command line, no manual configuration, no complicated setup.
 
-**Using the CLI:**
+### 💡 New User Tips:
 
-```bash
-python novel.py init "Your Novel Title" --author "Your Name"
-cd your-novel-title
-python novel.py agent 8  # Start with Story Advocate
-```
+- **Start with Agent 8 (Story Advocate)** - This agent helps you develop your initial idea
+- **Use Simple Mode** first - You can always switch to Advanced later
+- **Save often** - Press Ctrl+S (Cmd+S on Mac) or use the save buttons
+- **Create versions** - Use the Export tab to snapshot your progress
+- **Experiment freely** - You can always clear conversations and start fresh
 
-**Resources:**
-- 🖥️ **GUI Guide**: [GUI_README.md](GUI_README.md)
-- 📖 **Getting Started**: [GETTING_STARTED.md](GETTING_STARTED.md)
-- 📚 **Detailed Workflow**: [WORKFLOW.md](WORKFLOW.md)
-- 💡 **Usage Examples**: [USAGE.md](USAGE.md)
+### 📚 Learn More:
 
-Each agent stands ready to contribute their expertise to your novel. The system is fully reusable—create as many novel projects as you want.
+- **[QUICK_START.md](QUICK_START.md)** - Complete walkthrough
+- **[WORKFLOW.md](WORKFLOW.md)** - Writing workflow guide
+- **[GUI_TESTING.md](GUI_TESTING.md)** - Feature testing guide
+
+---
+
+**Ready to write your novel?** Just double-click to launch! 📝✨
