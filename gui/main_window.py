@@ -237,7 +237,7 @@ class NewProjectDialog(ctk.CTkToplevel):
         self.result = None
 
         self.title("Create New Project")
-        self.geometry("500x350")
+        self.geometry("500x400")  # Increased height to show buttons
         self.resizable(False, False)
 
         # Make modal
@@ -264,7 +264,7 @@ class NewProjectDialog(ctk.CTkToplevel):
 
         # Form frame
         form_frame = ctk.CTkFrame(self)
-        form_frame.pack(fill="both", expand=True, padx=30, pady=10)
+        form_frame.pack(fill="x", padx=30, pady=10)
 
         # Project name
         ctk.CTkLabel(form_frame, text="Project Name:", font=("Arial", 12)).pack(anchor="w", pady=(10, 5))
