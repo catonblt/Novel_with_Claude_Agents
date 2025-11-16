@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Novel Writer
+Comment=AI-Powered Novel Writing System
+Exec=bash -c "cd %k/.. && ./novel-writer.sh"
+Icon=%k/../icon.png
+Terminal=false
+Type=Application
+Categories=Office;Writing;Literature;
+StartupNotify=true

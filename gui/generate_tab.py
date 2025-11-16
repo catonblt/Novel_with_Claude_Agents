@@ -40,6 +40,17 @@ class GenerateTab:
 
         # === LEFT PANEL: Chat Interface ===
 
+        # Quick guide
+        guide_frame = ctk.CTkFrame(left_panel, fg_color=("#3B8ED0", "#1F6AA5"))
+        guide_frame.pack(fill="x", padx=10, pady=(10, 5))
+
+        ctk.CTkLabel(
+            guide_frame,
+            text="💬 How to Use: Select an agent → Click 'Start Conversation' → Chat about your story → Save the output",
+            font=("Arial", 10),
+            wraplength=600
+        ).pack(padx=10, pady=8)
+
         # Agent selector
         agent_frame = ctk.CTkFrame(left_panel)
         agent_frame.pack(fill="x", padx=10, pady=10)
@@ -176,23 +187,26 @@ class GenerateTab:
     def _start_conversation(self):
         """Start conversation with selected agent"""
         if not self.project_manager.current_project_dir:
-            messagebox.showwarning("Warning", "Please create or open a project first")
+            messagebox.showwarning(
+                "No Project Loaded",
+                "Please create or open a project first.\n\n" +
+                "Click 'New Project' in the menu to get started."
+            )
             return
 
         if not self.agent_manager.is_api_configured():
             messagebox.showerror(
                 "API Not Configured",
-                "Claude API is not configured. Please set the ANTHROPIC_API_KEY environment variable."
+                "Claude API is not configured.\n\n" +
+                "Please set the ANTHROPIC_API_KEY environment variable:\n\n" +
+                "export ANTHROPIC_API_KEY='your-api-key-here'"
             )
             return
 
         agent_num = self.agent_var.get().split(".")[0].strip()
         self.current_agent = agent_num
 
-        # Get story context from configure tab
-        from .configure_tab import ConfigureTab
-        # We need to get this from the parent - this is a design issue
-        # For now, we'll use the config directly
+        # Get story context from config
         config = self.project_manager.get_config()
         if not config:
             messagebox.showwarning("Warning", "No project configuration found")
@@ -205,6 +219,21 @@ class GenerateTab:
             "target_word_count": config.get("metadata", {}).get("target_word_count", 80000)
         }
 
+        # Validate that user has configured their story
+        if not story_context["story_idea"].strip():
+            response = messagebox.askyesno(
+                "Story Not Configured",
+                "You haven't filled in your story details yet!\n\n" +
+                "For best results, go to the Configure tab and:\n" +
+                "1. Describe your story idea\n" +
+                "2. Set genre, themes, and other details\n" +
+                "3. Save the project\n\n" +
+                "Do you want to continue anyway?\n" +
+                "(The agent will have limited context)"
+            )
+            if not response:
+                return
+
         # Start conversation
         self.agent_manager.start_conversation(agent_num, story_context)
 
@@ -213,6 +242,8 @@ class GenerateTab:
         self._log(f"Conversation started with Agent {agent_num}: {agent_name}")
         self._log(f"Story context provided:")
         self._log(f"  - Genre: {story_context['genre']}")
+        if story_context.get('story_idea'):
+            self._log(f"  - Story idea: {story_context['story_idea'][:100]}...")
         if story_context['themes']:
             self._log(f"  - Themes: {', '.join(story_context['themes'])}")
 

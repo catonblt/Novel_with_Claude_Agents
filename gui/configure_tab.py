@@ -26,6 +26,26 @@ class ConfigureTab:
         self.scroll_frame = ctk.CTkScrollableFrame(self.parent)
         self.scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # Getting Started Info Panel
+        info_frame = ctk.CTkFrame(self.scroll_frame, fg_color=("#3B8ED0", "#1F6AA5"))
+        info_frame.pack(fill="x", pady=(0, 20), padx=5)
+
+        ctk.CTkLabel(
+            info_frame,
+            text="📝 Getting Started",
+            font=("Arial", 14, "bold")
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+
+        ctk.CTkLabel(
+            info_frame,
+            text="1. Fill in your story details below\n" +
+                 "2. Choose Simple mode (quick) or Advanced mode (detailed)\n" +
+                 "3. Click '💾 Save Configuration' button above\n" +
+                 "4. Go to Generate tab to start working with agents",
+            font=("Arial", 11),
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+
         # Mode selector
         mode_frame = ctk.CTkFrame(self.scroll_frame)
         mode_frame.pack(fill="x", pady=(0, 20))
@@ -44,6 +64,17 @@ class ConfigureTab:
             variable=self.mode_var
         )
         mode_selector.pack(side="left", padx=10, pady=10)
+
+        # Save button on the right
+        save_btn = ctk.CTkButton(
+            mode_frame,
+            text="💾 Save Configuration",
+            command=self._save_configuration,
+            width=180,
+            height=35,
+            font=("Arial", 12, "bold")
+        )
+        save_btn.pack(side="right", padx=10, pady=10)
 
         # Container for mode-specific content
         self.content_frame = ctk.CTkFrame(self.scroll_frame)
@@ -432,6 +463,33 @@ class ConfigureTab:
         if self.mode == "advanced":
             selected = [num for num, var in self.agent_checkboxes.items() if var.get()]
             config["agent_settings"]["selected_agents"] = selected
+
+    def _save_configuration(self):
+        """Save configuration when user clicks the Save button"""
+        from tkinter import messagebox
+
+        if not self.project_manager.current_project_dir:
+            messagebox.showwarning(
+                "No Project Loaded",
+                "Please create or open a project first.\n\n" +
+                "Click 'New Project' in the menu to get started."
+            )
+            return
+
+        # Save to config
+        self.save_to_config()
+
+        # Save the project
+        success, message = self.project_manager.save_project()
+
+        if success:
+            messagebox.showinfo(
+                "Configuration Saved!",
+                "Your story configuration has been saved successfully!\n\n" +
+                "You can now go to the Generate tab to start working with agents."
+            )
+        else:
+            messagebox.showerror("Error", f"Failed to save configuration:\n{message}")
 
     def get_story_context(self) -> dict:
         """Get story context for agent manager"""
