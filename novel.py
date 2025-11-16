@@ -64,7 +64,7 @@ class NovelCLI:
             return False
 
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, 'r', encoding='utf-8') as f:
                 self.current_project = json.load(f)
                 self.project_config_path = config_path
                 return True
@@ -79,7 +79,7 @@ class NovelCLI:
             return False
 
         try:
-            with open(self.project_config_path, 'w') as f:
+            with open(self.project_config_path, 'w', encoding='utf-8') as f:
                 json.dump(self.current_project, f, indent=2)
             return True
         except Exception as e:
@@ -108,7 +108,7 @@ class NovelCLI:
             # Create README in each directory
             readme_path = path / "README.md"
             if not readme_path.exists():
-                readme_path.write_text(f"# {name.replace('_', ' ').title()}\n\nThis directory contains {name.replace('_', ' ')} for the novel.\n")
+                readme_path.write_text(f"# {name.replace('_', ' ').title()}\n\nThis directory contains {name.replace('_', ' ')} for the novel.\n", encoding='utf-8')
 
         # Create configuration file
         config = {
@@ -147,7 +147,7 @@ class NovelCLI:
         }
 
         config_path = project_dir / self.CONFIG_FILENAME
-        with open(config_path, 'w') as f:
+        with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=2)
 
         # Copy templates
@@ -156,7 +156,7 @@ class NovelCLI:
             templates_dst = project_dir / "templates"
             templates_dst.mkdir(exist_ok=True)
             for template_file in templates_src.glob("*.md"):
-                (templates_dst / template_file.name).write_text(template_file.read_text())
+                (templates_dst / template_file.name).write_text(template_file.read_text(encoding='utf-8'), encoding='utf-8')
 
         print("\n✅ Project initialized successfully!")
         print(f"\n📋 Next steps:")
@@ -235,7 +235,7 @@ class NovelCLI:
         print("="*70 + "\n")
 
         # Read and display agent file
-        content = agent_file.read_text()
+        content = agent_file.read_text(encoding='utf-8')
         print(content)
 
         print("\n" + "="*70)

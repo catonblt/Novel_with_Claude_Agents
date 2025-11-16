@@ -61,7 +61,7 @@ class AgentManager:
         if not agent_file.exists():
             return None
 
-        return agent_file.read_text()
+        return agent_file.read_text(encoding='utf-8')
 
     def get_agent_name(self, agent_num: str) -> str:
         """Get the name of an agent"""
@@ -293,8 +293,8 @@ class AgentManager:
                     content.append(f"{msg['content']}\n\n")
                     content.append("---\n\n")
 
-            # Write to session file
-            self.conversation_session_file.write_text(''.join(content))
+            # Write to session file with UTF-8 encoding
+            self.conversation_session_file.write_text(''.join(content), encoding='utf-8')
 
         except Exception as e:
             print(f"[Agent Manager] Error auto-saving conversation: {e}")
@@ -343,8 +343,8 @@ class AgentManager:
 
             entry.append("---\n\n")
 
-            # Append to transcript
-            with open(transcript_file, 'a') as f:
+            # Append to transcript with UTF-8 encoding
+            with open(transcript_file, 'a', encoding='utf-8') as f:
                 f.write(''.join(entry))
 
         except Exception as e:
