@@ -133,28 +133,37 @@ class GenerateTab:
         )
         self.stop_btn.pack(side="left", padx=5)
 
+        save_outline_btn = ctk.CTkButton(
+            control_frame,
+            text="Save as Outline",
+            command=self._save_as_outline,
+            width=120,
+            fg_color="#8B4513"
+        )
+        save_outline_btn.pack(side="right", padx=5)
+
         save_chapter_btn = ctk.CTkButton(
             control_frame,
             text="Save as Chapter",
             command=self._save_as_chapter,
-            width=130,
+            width=120,
             fg_color="#2B7A0B"
         )
         save_chapter_btn.pack(side="right", padx=5)
 
         save_output_btn = ctk.CTkButton(
             control_frame,
-            text="Save Agent Output",
+            text="Save Output",
             command=self._save_agent_output,
-            width=130
+            width=100
         )
         save_output_btn.pack(side="right", padx=5)
 
         clear_btn = ctk.CTkButton(
             control_frame,
-            text="Clear Conversation",
+            text="Clear Chat",
             command=self._clear_conversation,
-            width=130,
+            width=100,
             fg_color="gray"
         )
         clear_btn.pack(side="right", padx=5)
@@ -422,6 +431,34 @@ class GenerateTab:
             ))
         else:
             self._log(f"Error saving chapter: {message}")
+            messagebox.showerror("Save Error", message)
+
+    def _save_as_outline(self):
+        """Save the agent's output as the current outline"""
+        if not self.current_agent:
+            messagebox.showwarning("Warning", "No agent conversation active")
+            return
+
+        # Get last agent response
+        response = self.agent_manager.get_last_agent_response()
+        if not response:
+            messagebox.showwarning("Warning", "No agent output to save")
+            return
+
+        success, message = self.project_manager.save_outline(response)
+
+        if success:
+            self._log(f"Outline saved: {message}")
+            # Update status label
+            original_status = self.status_label.cget("text")
+            self.status_label.configure(text="✓ Outline saved", text_color="green")
+            # Reset after 3 seconds
+            self.parent.after(3000, lambda: self.status_label.configure(
+                text=original_status,
+                text_color="gray"
+            ))
+        else:
+            self._log(f"Error saving outline: {message}")
             messagebox.showerror("Save Error", message)
 
     def _clear_conversation(self):

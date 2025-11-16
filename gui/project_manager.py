@@ -244,6 +244,47 @@ class ProjectManager:
         except Exception as e:
             return False, f"Error saving chapter: {str(e)}"
 
+    def save_outline(self, content: str) -> Tuple[bool, str]:
+        """
+        Save content as the current outline
+
+        Args:
+            content: Outline content
+
+        Returns:
+            Tuple of (success: bool, message: str)
+        """
+        if not self.current_project_dir:
+            return False, "No project loaded"
+
+        try:
+            outline_dir = self.current_project_dir / "outline"
+            ensure_dir(outline_dir)
+
+            # Save to current-outline.md
+            outline_path = outline_dir / "current-outline.md"
+
+            # If outline already exists, create a revision backup
+            if outline_path.exists():
+                revisions_dir = outline_dir / "revisions"
+                ensure_dir(revisions_dir)
+
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                revision_path = revisions_dir / f"outline-{timestamp}.md"
+
+                # Copy current outline to revisions
+                current_content = outline_path.read_text(encoding='utf-8')
+                revision_path.write_text(current_content, encoding='utf-8')
+
+            # Write new outline
+            with open(outline_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+
+            return True, "Outline saved to current-outline.md"
+
+        except Exception as e:
+            return False, f"Error saving outline: {str(e)}"
+
     def load_agent_output(self, agent_num: str) -> Tuple[bool, str, str]:
         """
         Load output from a specific agent
