@@ -290,7 +290,7 @@ class NewProjectDialog(ctk.CTkToplevel):
         self.result = None
 
         self.title("Create New Project")
-        self.geometry("500x400")  # Increased height to show buttons
+        self.geometry("550x350")
         self.resizable(False, False)
 
         # Make modal
@@ -305,6 +305,9 @@ class NewProjectDialog(ctk.CTkToplevel):
         y = parent.winfo_y() + (parent.winfo_height() - self.winfo_height()) // 2
         self.geometry(f"+{x}+{y}")
 
+        # Focus on name entry
+        self.name_entry.focus()
+
     def _create_widgets(self):
         """Create dialog widgets"""
         # Title
@@ -313,85 +316,105 @@ class NewProjectDialog(ctk.CTkToplevel):
             text="Create New Novel Project",
             font=("Arial", 18, "bold")
         )
-        title.pack(pady=20)
+        title.pack(pady=(20, 10))
+
+        # Info label
+        info = ctk.CTkLabel(
+            self,
+            text="Fill in the details below and click 'Create Project' to start",
+            font=("Arial", 11),
+            text_color="gray"
+        )
+        info.pack(pady=(0, 20))
 
         # Form frame
         form_frame = ctk.CTkFrame(self)
-        form_frame.pack(fill="x", padx=30, pady=10)
+        form_frame.pack(fill="x", padx=40, pady=10)
 
         # Project name
-        ctk.CTkLabel(form_frame, text="Project Name:", font=("Arial", 12)).pack(anchor="w", pady=(10, 5))
-        self.name_entry = ctk.CTkEntry(form_frame, width=400, placeholder_text="My First Novel")
-        self.name_entry.pack(pady=(0, 15))
-
-        # Author name
-        ctk.CTkLabel(form_frame, text="Author Name:", font=("Arial", 12)).pack(anchor="w", pady=(10, 5))
-        self.author_entry = ctk.CTkEntry(form_frame, width=400, placeholder_text="Your Name")
-        self.author_entry.pack(pady=(0, 15))
-
-        # Directory
-        ctk.CTkLabel(form_frame, text="Project Directory (optional):", font=("Arial", 12)).pack(anchor="w", pady=(10, 5))
-
-        # Show default location
-        default_loc = Path.home() / "NovelProjects"
         ctk.CTkLabel(
             form_frame,
-            text=f"Default: {default_loc}",
-            font=("Arial", 10),
-            text_color="gray"
+            text="Project Name:",
+            font=("Arial", 13, "bold")
+        ).pack(anchor="w", pady=(15, 5))
+
+        self.name_entry = ctk.CTkEntry(
+            form_frame,
+            width=450,
+            height=35,
+            placeholder_text="e.g., My First Novel",
+            font=("Arial", 12)
+        )
+        self.name_entry.pack(pady=(0, 20))
+        self.name_entry.bind("<Return>", lambda e: self._create())
+
+        # Author name
+        ctk.CTkLabel(
+            form_frame,
+            text="Author Name:",
+            font=("Arial", 13, "bold")
         ).pack(anchor="w", pady=(0, 5))
 
-        dir_frame = ctk.CTkFrame(form_frame)
-        dir_frame.pack(fill="x", pady=(0, 15))
+        self.author_entry = ctk.CTkEntry(
+            form_frame,
+            width=450,
+            height=35,
+            placeholder_text="Your Name",
+            font=("Arial", 12)
+        )
+        self.author_entry.pack(pady=(0, 20))
+        self.author_entry.bind("<Return>", lambda e: self._create())
 
-        self.directory_entry = ctk.CTkEntry(dir_frame, width=320, placeholder_text="Leave blank to use default location")
-        self.directory_entry.pack(side="left", padx=(0, 10))
-
-        browse_btn = ctk.CTkButton(dir_frame, text="Browse", command=self._browse_directory, width=70)
-        browse_btn.pack(side="left")
+        # Location info
+        default_loc = Path.home() / "NovelProjects"
+        location_label = ctk.CTkLabel(
+            form_frame,
+            text=f"📁 Project will be saved to: {default_loc}",
+            font=("Arial", 10),
+            text_color="#4A9EFF"
+        )
+        location_label.pack(anchor="w", pady=(5, 15))
 
         # Buttons
         button_frame = ctk.CTkFrame(self)
-        button_frame.pack(fill="x", padx=30, pady=20)
-
-        create_btn = ctk.CTkButton(
-            button_frame,
-            text="Create Project",
-            command=self._create,
-            width=150
-        )
-        create_btn.pack(side="right", padx=5)
+        button_frame.pack(fill="x", padx=40, pady=(10, 25))
 
         cancel_btn = ctk.CTkButton(
             button_frame,
             text="Cancel",
             command=self.destroy,
-            width=150,
-            fg_color="gray"
+            width=200,
+            height=40,
+            fg_color="gray",
+            font=("Arial", 12)
         )
-        cancel_btn.pack(side="right", padx=5)
+        cancel_btn.pack(side="left", padx=5)
 
-    def _browse_directory(self):
-        """Browse for directory"""
-        directory = filedialog.askdirectory(title="Select Project Location")
-        if directory:
-            self.directory_entry.delete(0, "end")
-            self.directory_entry.insert(0, directory)
+        create_btn = ctk.CTkButton(
+            button_frame,
+            text="✓ Create Project",
+            command=self._create,
+            width=200,
+            height=40,
+            font=("Arial", 13, "bold")
+        )
+        create_btn.pack(side="right", padx=5)
 
     def _create(self):
         """Create project with entered information"""
         name = self.name_entry.get().strip()
         author = self.author_entry.get().strip()
-        directory = self.directory_entry.get().strip()
 
         if not name:
-            messagebox.showwarning("Warning", "Please enter a project name")
+            messagebox.showwarning("Missing Information", "Please enter a project name to continue.")
+            self.name_entry.focus()
             return
 
         if not author:
-            author = "Your Name"
+            author = "Author"
 
-        self.result = (name, author, Path(directory) if directory else None)
+        # Always use default directory (None means use default)
+        self.result = (name, author, None)
         self.destroy()
 
 
